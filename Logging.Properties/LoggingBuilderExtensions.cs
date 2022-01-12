@@ -26,4 +26,25 @@ public static class LoggingBuilderExtensions
 
         return new LogPropertyBuilder<TProvider>(builder.Services);
     }
+
+    /// <summary>
+    /// Adds a property logger to the factory.
+    /// </summary>
+    /// <typeparam name="T">The property logger type.</typeparam>
+    /// <param name="builder">The logging builder.</param>
+    /// <returns>A builder to configure log properties.</returns>
+    public static ILogPropertyBuilder AddPropertyLogger<T>(this ILoggingBuilder builder)
+        where T : class, IPropertyLogger
+    {
+        if (builder == null)
+        {
+            throw new ArgumentNullException(nameof(builder));
+        }
+
+        builder.Services
+            .AddSingleton<T>()
+            .AddSingleton<ILoggerProvider, PropertyLoggerProvider<T>>();
+
+        return builder.AddProperties<PropertyLoggerProvider<T>>();
+    }
 }
