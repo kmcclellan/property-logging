@@ -1,0 +1,26 @@
+name: Publish to NuGet.org
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-dotnet@v1.9.0
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Parse version
+        run: echo "${{ github.ref_name }}" | sed -e 's/^v/version=/' >> $GITHUB_ENV
+
+      - name: Create packages
+        run: dotnet pack --configuration Release -property:Version=${{ env.version }}
+
+      - name: Publish packages
+        run: >
+          dotnet nuget push **/*.nupkg
+          --source https://api.nuget.org/v3/index.json
+          --api-key ${{ secrets.NUGET_TOKEN }}
