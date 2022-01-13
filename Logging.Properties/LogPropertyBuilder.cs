@@ -24,15 +24,12 @@ class LogPropertyBuilder<TProvider> : ILogPropertyBuilder
         string? exception = null,
         string? message = null)
     {
-        if (level != null)
-        {
-            TryBuild(level, s => new LevelProperty(s));
-            TryBuild(category, s => new CategoryProperty(s));
-            TryBuild(eventId, s => new EventIdProperty(s));
-            TryBuild(state, s => new StateProperty(s));
-            TryBuild(exception, s => new ExceptionProperty(s));
-            TryBuild(message, s => new MessageProperty(s));
-        }
+        TryBuild(level, s => new LevelProperty(s));
+        TryBuild(category, s => new CategoryProperty(s));
+        TryBuild(eventId, s => new EventIdProperty(s));
+        TryBuild(state, s => new StateProperty(s));
+        TryBuild(exception, s => new ExceptionProperty(s));
+        TryBuild(message, s => new MessageProperty(s));
 
         void TryBuild(string? name, Func<string, ILogProperty> build)
         {
