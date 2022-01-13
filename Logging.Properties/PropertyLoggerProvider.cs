@@ -3,46 +3,62 @@ namespace Microsoft.Extensions.Logging.Properties;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 
-[SuppressMessage("Microsoft.Performance", "CA1812", Justification = "Dependency injection.")]
-class PropertyLoggerProvider<T> : ILoggerProvider, ISupportExternalScope where T : IPropertyLogger
+/// <summary>
+/// A base provider for logging named properties.
+/// </summary>
+public abstract class PropertyLoggerProvider : ILoggerProvider, ISupportExternalScope
 {
-    readonly ILogPropertyMapper<PropertyLoggerProvider<T>> mapper;
-    readonly T propertyLogger;
+    readonly ILogPropertyMapper mapper;
 
-    public PropertyLoggerProvider(ILogPropertyMapper<PropertyLoggerProvider<T>> mapper, T propertyLogger)
+    /// <summary>
+    /// Initializes the provider.
+    /// </summary>
+    /// <param name="mapper">The log property mapper.</param>
+    protected PropertyLoggerProvider(ILogPropertyMapper mapper)
     {
         this.mapper = mapper;
-        this.propertyLogger = propertyLogger;
     }
 
-    public void SetScopeProvider(IExternalScopeProvider scopeProvider)
-    {
-        if (this.mapper is ISupportExternalScope sm)
-        {
-            sm.SetScopeProvider(scopeProvider);
-        }
-    }
+    /// <inheritdoc/>
+    public void SetScopeProvider(IExternalScopeProvider scopeProvider) => this.mapper.SetScopes(scopeProvider);
 
-    public ILogger CreateLogger(string categoryName) => new LoggerAdapter(this, categoryName);
+    /// <inheritdoc/>
+    public ILogger CreateLogger(string categoryName) => new PropertyLogger(this, categoryName);
 
+    /// <inheritdoc/>
     public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Writes properties for a log entry.
+    /// </summary>
+    /// <param name="properties">The log properties.</param>
+    protected abstract void Log(IEnumerable<KeyValuePair<string, object>> properties);
+
+    /// <summary>
+    /// Disposes and/or finalizes the instance.
+    /// </summary>
+    /// <param name="disposing"><see langword="true"/> to include managed resources.</param>
+    protected virtual void Dispose(bool disposing)
     {
     }
 
     private void Log<TState>(LogEntry<TState> entry)
     {
         var properties = this.mapper.Map(entry);
-        this.propertyLogger.Log(properties);
+        this.Log(properties);
     }
 
-    private class LoggerAdapter : ILogger
+    private class PropertyLogger : ILogger
     {
-        readonly PropertyLoggerProvider<T> provider;
+        readonly PropertyLoggerProvider provider;
         readonly string category;
 
-        public LoggerAdapter(PropertyLoggerProvider<T> provider, string category)
+        public PropertyLogger(PropertyLoggerProvider provider, string category)
         {
             this.provider = provider;
             this.category = category;
@@ -57,10 +73,7 @@ class PropertyLoggerProvider<T> : ILoggerProvider, ISupportExternalScope where T
             EventId eventId,
             TState state,
             Exception? exception,
-            Func<TState, Exception?, string> formatter)
-        {
-            var entry = new LogEntry<TState>(logLevel, this.category, eventId, state, exception, formatter);
-            this.provider.Log(entry);
-        }
+            Func<TState, Exception?, string> formatter) =>
+            this.provider.Log<TState>(new(logLevel, this.category, eventId, state, exception, formatter));
     }
 }
