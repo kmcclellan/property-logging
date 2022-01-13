@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using System.Diagnostics.CodeAnalysis;
 
 [SuppressMessage("Microsoft.Performance", "CA1812", Justification = "Dependency injection.")]
-class LogPropertyMapper<TProvider> : ILogPropertyMapper<TProvider>, ISupportExternalScope
+class LogPropertyMapper<TProvider> : ILogPropertyMapper<TProvider>
 {
     readonly IEnumerable<ILogProperty> properties;
 
@@ -30,5 +30,5 @@ class LogPropertyMapper<TProvider> : ILogPropertyMapper<TProvider>, ISupportExte
         }
     }
 
-    public void SetScopeProvider(IExternalScopeProvider scopeProvider) => this.scopes = scopeProvider;
+    public void SetScopes(IExternalScopeProvider scopes) => this.scopes = scopes;
 }
