@@ -11,6 +11,8 @@ public abstract class PropertyLoggerProvider : ILoggerProvider, ISupportExternal
 {
     readonly ILogPropertyMapper mapper;
 
+    IExternalScopeProvider? scopes;
+
     /// <summary>
     /// Initializes the provider.
     /// </summary>
@@ -21,7 +23,7 @@ public abstract class PropertyLoggerProvider : ILoggerProvider, ISupportExternal
     }
 
     /// <inheritdoc/>
-    public void SetScopeProvider(IExternalScopeProvider scopeProvider) => this.mapper.SetScopes(scopeProvider);
+    public void SetScopeProvider(IExternalScopeProvider scopeProvider) => this.scopes = scopeProvider;
 
     /// <inheritdoc/>
     public ILogger CreateLogger(string categoryName) => new PropertyLogger(this, categoryName);
@@ -49,7 +51,7 @@ public abstract class PropertyLoggerProvider : ILoggerProvider, ISupportExternal
 
     private void Log<TState>(LogEntry<TState> entry)
     {
-        var properties = this.mapper.Map(entry);
+        var properties = this.mapper.Map(entry, this.scopes);
         this.Log(properties);
     }
 
