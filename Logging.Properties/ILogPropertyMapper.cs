@@ -20,13 +20,10 @@ public interface ILogPropertyMapper
     /// </summary>
     /// <typeparam name="TState">The logged state type.</typeparam>
     /// <param name="entry">The log entry.</param>
+    /// <param name="scopes">A provider for log scopes to include when mapping.</param>
     /// <returns>The mapped properties.</returns>
-    IEnumerable<KeyValuePair<string, object>> Map<TState>(LogEntry<TState> entry);
-
-    /// <summary>
-    /// Enables scope mapping using an external provider.
-    /// </summary>
-    /// <param name="scopes">The scope provider.</param>
-    void SetScopes(IExternalScopeProvider scopes);
+    IEnumerable<KeyValuePair<string, object>> Map<TState>(
+        LogEntry<TState> entry,
+        IExternalScopeProvider? scopes = null);
 }
 
