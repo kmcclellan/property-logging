@@ -1,31 +1,29 @@
 namespace Microsoft.Extensions.Logging.Properties;
 
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 using System.Diagnostics.CodeAnalysis;
 
 [SuppressMessage("Microsoft.Performance", "CA1812", Justification = "Dependency injection.")]
 class LogPropertyMapper<TProvider> : ILogPropertyMapper<TProvider>
 {
-    readonly IEnumerable<ILogProperty> properties;
+    readonly IOptions<LogPropertyOptions<TProvider>> options;
 
-    public LogPropertyMapper(IEnumerable<ILogProperty> properties)
+    public LogPropertyMapper(IOptions<LogPropertyOptions<TProvider>> options)
     {
-        this.properties = properties;
+        this.options = options;
     }
 
     public IEnumerable<KeyValuePair<string, object>> Map<TState>(
         LogEntry<TState> entry,
         IExternalScopeProvider? scopes = null)
     {
-        foreach (var property in properties)
+        foreach (var mapper in options.Value.Mappers)
         {
-            if (property.ProviderType == typeof(TProvider))
+            foreach (var kvp in mapper.Map(entry, scopes))
             {
-                foreach (var value in property.GetValues(entry, scopes))
-                {
-                    yield return new(property.Name, value);
-                }
+                yield return kvp;
             }
         }
     }

@@ -1,11 +1,11 @@
 namespace Microsoft.Extensions.Logging.Properties;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Properties.Mappers;
 
 using System;
-using System.Collections.Generic;
 
 class LogPropertyBuilder<TProvider> : ILogPropertyBuilder
 {
@@ -24,207 +24,52 @@ class LogPropertyBuilder<TProvider> : ILogPropertyBuilder
         string? exception = null,
         string? message = null)
     {
-        TryBuild(level, s => new LevelProperty(s));
-        TryBuild(category, s => new CategoryProperty(s));
-        TryBuild(eventId, s => new EventIdProperty(s));
-        TryBuild(state, s => new StateProperty(s));
-        TryBuild(exception, s => new ExceptionProperty(s));
-        TryBuild(message, s => new MessageProperty(s));
-
-        void TryBuild(string? name, Func<string, ILogProperty> build)
-        {
-            if (name != null)
+        return this.AddMapper<LogEntryMapper<TProvider>, LogEntryMapperOptions<TProvider>>(
+            opts =>
             {
-                this.Add(build(name));
-            }
-        }
+                TryAdd(level, LogEntryMapperOptions.MappingType.Level);
+                TryAdd(category, LogEntryMapperOptions.MappingType.Category);
+                TryAdd(eventId, LogEntryMapperOptions.MappingType.EventId);
+                TryAdd(state, LogEntryMapperOptions.MappingType.State);
+                TryAdd(exception, LogEntryMapperOptions.MappingType.Exception);
+                TryAdd(message, LogEntryMapperOptions.MappingType.Message);
 
-        return this;
+                void TryAdd(string? name, LogEntryMapperOptions.MappingType type)
+                {
+                    if (name != null)
+                    {
+                        opts.Mappings.Add(new(name, type));
+                    }
+                }
+            });
     }
 
-    public ILogPropertyBuilder FromException(string name, Func<Exception, object?> map, bool inner = false)
-    {
-        this.Add(new ExceptionProperty(name, map, inner));
-        return this;
-    }
+    public ILogPropertyBuilder FromException(string name, Func<Exception, object?> map, bool inner = false) =>
+        this.AddMapper<LogExceptionMapper<TProvider>, LogExceptionMapperOptions<TProvider>>(
+            opts => opts.Mappings.Add(new(name, map, inner)));
 
     public ILogPropertyBuilder FromException<T>(string name, Func<T, object?> map, bool inner = false)
         where T : Exception =>
         this.FromException(name, x => x is T t ? map(t) : null, inner);
 
+    public ILogPropertyBuilder FromValue(string name, object value) =>
+        this.AddMapper<LogValueMapper<TProvider>, LogValueMapperOptions<TProvider>>(
+            opts => opts.Mappings.Add(new(name, value)));
 
-    public ILogPropertyBuilder FromValue(string name, object value)
+    public ILogPropertyBuilder FromValue(string name, Func<object?> map) =>
+        this.AddMapper<LogValueMapper<TProvider>, LogValueMapperOptions<TProvider>>(
+            opts => opts.Mappings.Add(new(name, map)));
+
+    private ILogPropertyBuilder AddMapper<TMapper, TOptions>(Action<TOptions> options)
+        where TMapper : class, ILogPropertyMapper
+        where TOptions : class
     {
-        this.Add(new ValueProperty(name, value));
+        this.services.TryAddSingleton<TMapper>();
+        this.services.AddOptions<LogPropertyOptions<TProvider>>()
+            .Configure<TMapper>((opts, mapper) => opts.Mappers.Add(mapper));
+
+        this.services.Configure(options);
+
         return this;
-    }
-
-    public ILogPropertyBuilder FromValue(string name, Func<object?> map)
-    {
-        this.Add(new ValueProperty(name, map));
-        return this;
-    }
-
-    private void Add(ILogProperty property)
-    {
-        this.services.AddSingleton(property);
-    }
-
-    private class LevelProperty : LogProperty
-    {
-        public LevelProperty(string name) : base(name)
-        {
-        }
-
-        protected override object? GetValue<TState>(LogEntry<TState> entry, IExternalScopeProvider? scopes) =>
-            entry.LogLevel;
-    }
-
-
-    private class CategoryProperty : LogProperty
-    {
-        public CategoryProperty(string name) : base(name)
-        {
-        }
-
-        protected override object? GetValue<TState>(LogEntry<TState> entry, IExternalScopeProvider? scopes) =>
-            entry.Category;
-    }
-
-
-    private class EventIdProperty : LogProperty
-    {
-        public EventIdProperty(string name) : base(name)
-        {
-        }
-
-        protected override object? GetValue<TState>(LogEntry<TState> entry, IExternalScopeProvider? scopes) =>
-            entry.EventId;
-    }
-
-    private class StateProperty : LogProperty
-    {
-        public StateProperty(string name) : base(name)
-        {
-        }
-        protected override object? GetValue<TState>(LogEntry<TState> entry, IExternalScopeProvider? scopes) =>
-            entry.State;
-    }
-
-    private class ExceptionProperty : LogProperty
-    {
-        readonly Func<Exception, object?>? map;
-        readonly bool inner;
-
-        public ExceptionProperty(string name) : base(name)
-        {
-        }
-
-        public ExceptionProperty(string name, Func<Exception, object?>? map, bool inner) : base(name)
-        {
-            this.map = map;
-            this.inner = inner;
-        }
-
-        public override IEnumerable<object> GetValues<TState>(LogEntry<TState> entry, IExternalScopeProvider? scopes)
-        {
-            if (this.map != null && this.inner)
-            {
-                foreach (var exception in Flatten(entry.Exception))
-                {
-                    var value = this.map(exception);
-
-                    if (value != null)
-                    {
-                        yield return value;
-                    }
-                }
-            }
-            else if (entry.Exception != null)
-            {
-                var value = this.map == null ? entry.Exception : this.map(entry.Exception);
-
-                if (value != null)
-                {
-                    yield return value;
-                }
-            }
-        }
-
-        private static IEnumerable<Exception> Flatten(Exception? exception)
-        {
-            if (exception is AggregateException agg)
-            {
-                foreach (var inner1 in agg.InnerExceptions)
-                {
-                    foreach (var inner2 in Flatten(inner1))
-                    {
-                        yield return inner2;
-                    }
-                }
-            }
-            else if (exception != null)
-            {
-                yield return exception;
-
-                foreach (var inner in Flatten(exception.InnerException))
-                {
-                    yield return inner;
-                }
-            }
-        }
-    }
-
-    private class MessageProperty : LogProperty
-    {
-        public MessageProperty(string name) : base(name)
-        {
-        }
-
-        protected override object? GetValue<TState>(LogEntry<TState> entry, IExternalScopeProvider? scopes) =>
-            entry.Formatter?.Invoke(entry.State, entry.Exception);
-    }
-
-    private class ValueProperty : LogProperty
-    {
-        readonly object? value;
-        readonly Func<object?>? map;
-
-        public ValueProperty(string name, object value) : base(name)
-        {
-            this.value = value;
-        }
-
-        public ValueProperty(string name, Func<object?> map) : base(name)
-        {
-            this.map = map;
-        }
-
-        protected override object? GetValue<TState>(LogEntry<TState> entry, IExternalScopeProvider? scopes) =>
-            this.value ?? this.map?.Invoke();
-    }
-
-    private abstract class LogProperty : ILogProperty
-    {
-        public LogProperty(string name)
-        {
-            this.Name = name;
-        }
-
-        public string Name { get; }
-
-        public Type ProviderType => typeof(TProvider);
-
-        public virtual IEnumerable<object> GetValues<TState>(LogEntry<TState> entry, IExternalScopeProvider? scopes)
-        {
-            var value = GetValue(entry, scopes);
-
-            if (value != null)
-            {
-                yield return value;
-            }
-        }
-
-        protected virtual object? GetValue<TState>(LogEntry<TState> entry, IExternalScopeProvider? scopes) => null;
     }
 }
