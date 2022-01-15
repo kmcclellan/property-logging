@@ -38,25 +38,6 @@ public interface ILogPropertyBuilder
         string? message = null);
 
     /// <summary>
-    /// Configures a property mapping from logged state.
-    /// </summary>
-    /// <param name="name">The property name.</param>
-    /// <param name="map">A delegate mapping the property value (<see langword="null"/> for no value).</param>
-    /// <param name="scopes"><see langword="true"/> to map scope state.</param>
-    /// <returns>The same instance, for chaining.</returns>
-    ILogPropertyBuilder FromState(string name, Func<object, object?> map, bool scopes = false);
-
-    /// <summary>
-    /// Configures a property mapping from logged state of a given type.
-    /// </summary>
-    /// <typeparam name="T">The log state type.</typeparam>
-    /// <param name="name">The property name.</param>
-    /// <param name="map">A delegate mapping the property value (<see langword="null"/> for no value).</param>
-    /// <param name="scopes"><see langword="true"/> to map scope state.</param>
-    /// <returns>The same instance, for chaining.</returns>
-    ILogPropertyBuilder FromState<T>(string name, Func<T, object?> map, bool scopes = false);
-
-    /// <summary>
     /// Configures a property mapping from logged exceptions.
     /// </summary>
     /// <param name="name">The property name.</param>

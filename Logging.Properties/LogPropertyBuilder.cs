@@ -42,15 +42,6 @@ class LogPropertyBuilder<TProvider> : ILogPropertyBuilder
         return this;
     }
 
-    public ILogPropertyBuilder FromState(string name, Func<object, object?> map, bool scopes = false)
-{
-        this.Add(new StateProperty(name, map, scopes));
-        return this;
-    }
-
-    public ILogPropertyBuilder FromState<T>(string name, Func<T, object?> map, bool scopes = false) =>
-        this.FromState(name, x => x is T t ? map(t) : null, scopes);
-
     public ILogPropertyBuilder FromException(string name, Func<Exception, object?> map, bool inner = false)
     {
         this.Add(new ExceptionProperty(name, map, inner));
@@ -113,64 +104,11 @@ class LogPropertyBuilder<TProvider> : ILogPropertyBuilder
 
     private class StateProperty : LogProperty
     {
-        readonly Func<object, object?>? map;
-        readonly bool scopes;
-
         public StateProperty(string name) : base(name)
         {
         }
-
-        public StateProperty(string name, Func<object, object?>? map, bool scopes) : base(name)
-        {
-            this.map = map;
-            this.scopes = scopes;
-        }
-
-
-        public override IEnumerable<object> GetValues<TState>(LogEntry<TState> entry, IExternalScopeProvider? scopes)
-        {
-            if (this.map != null && scopes != null && this.scopes)
-            {
-                var values = new List<object>();
-
-                scopes.ForEachScope(
-                    (obj, item) =>
-                    {
-                        if (obj != null)
-                        {
-                            var value = item.map(obj);
-
-                            if (value != null)
-                            {
-                                item.values.Add(value);
-                            }
-                        }
-                    },
-                    (this.map, values));
-
-                foreach (var scopeValue in values)
-                {
-                    yield return scopeValue;
-                }
-            }
-
-            if (entry.State != null)
-            {
-                if (this.map == null)
-                {
-                    yield return entry.State;
-                }
-                else
-                {
-                    var value = this.map(entry.State);
-
-                    if (value != null)
-                    {
-                        yield return value;
-                    }
-                }
-            }
-        }
+        protected override object? GetValue<TState>(LogEntry<TState> entry, IExternalScopeProvider? scopes) =>
+            entry.State;
     }
 
     private class ExceptionProperty : LogProperty
