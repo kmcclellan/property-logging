@@ -48,7 +48,7 @@ class LogPropertyBuilder<TProvider> : ILogPropertyBuilder
         return this;
     }
 
-    public ILogPropertyBuilder FromException<T>(string name, Func<Exception, object?> map, bool inner = false)
+    public ILogPropertyBuilder FromException<T>(string name, Func<T, object?> map, bool inner = false)
         where T : Exception =>
         this.FromException(name, x => x is T t ? map(t) : null, inner);
 

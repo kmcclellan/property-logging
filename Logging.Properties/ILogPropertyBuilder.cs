@@ -54,7 +54,7 @@ public interface ILogPropertyBuilder
     /// <param name="map">A delegate mapping the property value (<see langword="null"/> for no value).</param>
     /// <param name="inner"><see langword="true"/> to map inner exceptions (recursively).</param>
     /// <returns>The same instance, for chaining.</returns>
-    ILogPropertyBuilder FromException<T>(string name, Func<Exception, object?> map, bool inner = false)
+    ILogPropertyBuilder FromException<T>(string name, Func<T, object?> map, bool inner = false)
         where T : Exception;
 
     /// <summary>
