@@ -9,17 +9,17 @@ using System;
 /// </summary>
 public abstract class PropertyLoggerProvider : ILoggerProvider, ISupportExternalScope
 {
-    readonly ILogPropertyMapper mapper;
+    readonly IEnumerable<ILogPropertyMapper> mappers;
 
     IExternalScopeProvider? scopes;
 
     /// <summary>
-    /// Initializes the provider.
+    /// Initializes the provider with the given property mappers.
     /// </summary>
-    /// <param name="mapper">The log property mapper.</param>
-    protected PropertyLoggerProvider(ILogPropertyMapper mapper)
+    /// <param name="mappers">The log property mappers.</param>
+    protected PropertyLoggerProvider(IEnumerable<ILogPropertyMapper> mappers)
     {
-        this.mapper = mapper;
+        this.mappers = mappers;
     }
 
     /// <inheritdoc/>
@@ -49,10 +49,17 @@ public abstract class PropertyLoggerProvider : ILoggerProvider, ISupportExternal
     {
     }
 
-    private void Log<TState>(LogEntry<TState> entry)
+    private void Log<TState>(LogEntry<TState> entry) => this.Log(this.Map(entry));
+
+    private IEnumerable<KeyValuePair<string, object>> Map<TState>(LogEntry<TState> entry)
     {
-        var properties = this.mapper.Map(entry, this.scopes);
-        this.Log(properties);
+        foreach (var mapper in this.mappers)
+        {
+            foreach (var property in mapper.Map(entry, this.scopes))
+            {
+                yield return property;
+            }
+        }
     }
 
     private class PropertyLogger : ILogger
