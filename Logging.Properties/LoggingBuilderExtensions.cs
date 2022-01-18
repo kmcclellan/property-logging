@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging.Configuration;
+using Microsoft.Extensions.Logging.Properties.Mapping;
 using Microsoft.Extensions.Options;
 
 using System.Diagnostics.CodeAnalysis;
@@ -27,6 +28,9 @@ public static class LoggingBuilderExtensions
         }
 
         builder.AddConfiguration();
+        builder.Services
+            .AddMapper<TProvider, EntryMapper<TProvider>, EntryPropertyOptions<TProvider>>("Entry");
+
         return builder;
     }
 
