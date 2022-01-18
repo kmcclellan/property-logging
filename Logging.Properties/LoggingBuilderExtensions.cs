@@ -31,7 +31,8 @@ public static class LoggingBuilderExtensions
         builder.Services
             .AddMapper<TProvider, EntryMapper<TProvider>, EntryPropertyOptions<TProvider>>("Entry")
             .AddMapper<TProvider, EventIdMapper<TProvider>, EventIdPropertyOptions<TProvider>>("EventId")
-            .AddMapper<TProvider, ExceptionMapper<TProvider>, ExceptionPropertyOptions<TProvider>>("Exception");
+            .AddMapper<TProvider, ExceptionMapper<TProvider>, ExceptionPropertyOptions<TProvider>>("Exception")
+            .AddMapper<TProvider, EnvironmentMapper<TProvider>, EnvironmentPropertyOptions<TProvider>>("Environment");
 
         return builder;
     }
