@@ -14,6 +14,9 @@ indent_size = 2
 indent_style = space
 indent_size = 4
 
+// Turns on warnings for dotnet CLI.
+dotnet_analyzer_diagnostic.severity = default
+
 csharp_style_namespace_declarations = file_scoped
 dotnet_separate_import_directive_groups = true
 dotnet_sort_system_directives_first = false
