@@ -39,7 +39,7 @@ public abstract class PropertyLoggerProvider : ILoggerProvider, ISupportExternal
     /// Writes properties for a log entry.
     /// </summary>
     /// <param name="properties">The log properties.</param>
-    protected abstract void Log(IEnumerable<KeyValuePair<string, object>> properties);
+    protected abstract void Log(IEnumerable<KeyValuePair<string, object?>> properties);
 
     /// <summary>
     /// Disposes and/or finalizes the instance.
@@ -51,7 +51,7 @@ public abstract class PropertyLoggerProvider : ILoggerProvider, ISupportExternal
 
     private void Log<TState>(LogEntry<TState> entry) => this.Log(this.Map(entry));
 
-    private IEnumerable<KeyValuePair<string, object>> Map<TState>(LogEntry<TState> entry)
+    private IEnumerable<KeyValuePair<string, object?>> Map<TState>(LogEntry<TState> entry)
     {
         foreach (var mapper in this.mappers)
         {
