@@ -34,7 +34,8 @@ public static class LoggingBuilderExtensions
             .AddMapper<TProvider, ExceptionMapper<TProvider>, ExceptionPropertyOptions<TProvider>>("Exception")
             .AddMapper<TProvider, EnvironmentMapper<TProvider>, EnvironmentPropertyOptions<TProvider>>("Environment")
             .AddMapper<TProvider, TimestampMapper<TProvider>, TimestampPropertyOptions<TProvider>>("Timestamp")
-            .AddMapper<TProvider, StaticMapper<TProvider>, StaticPropertyOptions<TProvider>>("Static");
+            .AddMapper<TProvider, StaticMapper<TProvider>, StaticPropertyOptions<TProvider>>("Static")
+            .AddMapper<TProvider, StateMapper<TProvider>, StatePropertyOptions<TProvider>>("State");
 
         return builder;
     }
