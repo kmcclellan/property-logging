@@ -11,6 +11,9 @@ using System.Diagnostics.CodeAnalysis;
 [SuppressMessage("Microsoft.Performance", "CA1812", Justification = "Dependency injection.")]
 class StateMapper<TProvider> : ILogPropertyMapper<TProvider>, IDisposable
 {
+    // Require explict mapping for keys injected by logging framework.
+    static readonly HashSet<string> SpecialKeys = new() { "{OriginalFormat}" };
+
     readonly ConcurrentDictionary<string, StateCategoryPropertyOptions> cache = new();
     readonly IDisposable reload;
 
@@ -112,7 +115,8 @@ class StateMapper<TProvider> : ILogPropertyMapper<TProvider>, IDisposable
         {
             foreach (var kvp in values)
             {
-                if (options.Mappings.TryGetValue(kvp.Key, out var mapping) || options.IncludeOthers)
+                if (options.Mappings.TryGetValue(kvp.Key, out var mapping) ||
+                    (options.IncludeOthers && !SpecialKeys.Contains(kvp.Key)))
                 {
                     properties ??= new List<KeyValuePair<string, object?>>();
                     properties.Add(mapping != null ? new(mapping, kvp.Value) : kvp);

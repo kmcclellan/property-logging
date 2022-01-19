@@ -13,6 +13,9 @@ public class StateCategoryPropertyOptions
     /// <summary>
     /// Gets or sets whether to include unmapped keys as properties.
     /// </summary>
+    /// <remarks>
+    /// The special key "{OriginalFormat}" must be explicitly mapped.
+    /// </remarks>
     public bool IncludeOthers { get; set; }
 
     /// <summary>
