@@ -40,21 +40,23 @@ class StateMapper<TProvider> : ILogPropertyMapper<TProvider>, IDisposable
             this.cache[entry.Category] = options;
         }
 
-        var properties = default(ICollection<KeyValuePair<string, object?>>);
-
         if (options.Mappings.Count > 0 || options.IncludeOthers)
         {
+            var properties = new List<KeyValuePair<string, object?>>();
+
             if (scopes != null && options.IncludeScopes)
             {
                 scopes.ForEachScope(
-                    (o, s) => MapState(o, s.options, ref s.properties),
+                    (o, s) => MapState(o, s.options, s.properties),
                     (options, properties));
             }
 
-            MapState(entry.State, options, ref properties);
+            MapState(entry.State, options, properties);
+
+            return properties;
         }
 
-        return properties ?? Enumerable.Empty<KeyValuePair<string, object?>>();
+        return Enumerable.Empty<KeyValuePair<string, object?>>();
     }
 
     public void Dispose() => this.reload.Dispose();
@@ -109,19 +111,19 @@ class StateMapper<TProvider> : ILogPropertyMapper<TProvider>, IDisposable
     private static void MapState(
         object? state,
         StateCategoryPropertyOptions options,
-        ref ICollection<KeyValuePair<string, object?>>? properties)
+        ICollection<KeyValuePair<string, object?>> properties)
     {
         switch (state)
         {
             case KeyValuePair<string, object?> value:
-                MapValue(value, options, ref properties);
+                MapValue(value, options, properties);
                 break;
 
             case IEnumerable<KeyValuePair<string, object?>> values:
 
                 foreach (var kvp in values)
                 {
-                    MapValue(kvp, options, ref properties);
+                    MapValue(kvp, options, properties);
                 }
 
                 break;
@@ -131,12 +133,11 @@ class StateMapper<TProvider> : ILogPropertyMapper<TProvider>, IDisposable
     private static void MapValue(
         KeyValuePair<string, object?> kvp,
         StateCategoryPropertyOptions options,
-        ref ICollection<KeyValuePair<string, object?>>? properties)
+        ICollection<KeyValuePair<string, object?>> properties)
     {
         if (options.Mappings.TryGetValue(kvp.Key, out var mapping) ||
             (options.IncludeOthers && !SpecialKeys.Contains(kvp.Key)))
         {
-            properties ??= new List<KeyValuePair<string, object?>>();
             properties.Add(mapping != null ? new(mapping, kvp.Value) : kvp);
         }
     }
