@@ -111,17 +111,33 @@ class StateMapper<TProvider> : ILogPropertyMapper<TProvider>, IDisposable
         StateCategoryPropertyOptions options,
         ref ICollection<KeyValuePair<string, object?>>? properties)
     {
-        if (state is IEnumerable<KeyValuePair<string, object?>> values)
+        switch (state)
         {
-            foreach (var kvp in values)
-            {
-                if (options.Mappings.TryGetValue(kvp.Key, out var mapping) ||
-                    (options.IncludeOthers && !SpecialKeys.Contains(kvp.Key)))
+            case KeyValuePair<string, object?> value:
+                MapValue(value, options, ref properties);
+                break;
+
+            case IEnumerable<KeyValuePair<string, object?>> values:
+
+                foreach (var kvp in values)
                 {
-                    properties ??= new List<KeyValuePair<string, object?>>();
-                    properties.Add(mapping != null ? new(mapping, kvp.Value) : kvp);
+                    MapValue(kvp, options, ref properties);
                 }
-            }
+
+                break;
+        }
+    }
+
+    private static void MapValue(
+        KeyValuePair<string, object?> kvp,
+        StateCategoryPropertyOptions options,
+        ref ICollection<KeyValuePair<string, object?>>? properties)
+    {
+        if (options.Mappings.TryGetValue(kvp.Key, out var mapping) ||
+            (options.IncludeOthers && !SpecialKeys.Contains(kvp.Key)))
+        {
+            properties ??= new List<KeyValuePair<string, object?>>();
+            properties.Add(mapping != null ? new(mapping, kvp.Value) : kvp);
         }
     }
 }
