@@ -17,6 +17,18 @@ public static class LoggingBuilderExtensions
     /// <summary>
     /// Adds default implementations of <see cref="ILogPropertyMapper{TProvider}"/> to the logging services.
     /// </summary>
+    /// <remarks>
+    /// Configure mappers using property options, which bind to provider configuration as follows:
+    /// <list type="bullet">
+    /// <item><c>Properties:Entry</c> to <see cref="EntryPropertyOptions{TProvider}"/>.</item>
+    /// <item><c>Properties:EventId</c> to <see cref="EventIdPropertyOptions{TProvider}"/>.</item>
+    /// <item><c>Properties:Exception</c> to <see cref="ExceptionPropertyOptions{TProvider}"/>.</item>
+    /// <item><c>Properties:Environment</c> to <see cref="EnvironmentPropertyOptions{TProvider}"/>.</item>
+    /// <item><c>Properties:Timestamp</c> to <see cref="TimestampPropertyOptions{TProvider}"/>.</item>
+    /// <item><c>Properties:Static</c> to <see cref="StaticPropertyOptions{TProvider}"/>.</item>
+    /// <item><c>Properties:State</c> to <see cref="StatePropertyOptions{TProvider}"/>.</item>
+    /// </list>
+    /// </remarks>
     /// <typeparam name="TProvider">The associated logger provider type.</typeparam>
     /// <param name="builder">The logging builder.</param>
     /// <returns>The same instance, for chaining.</returns>
