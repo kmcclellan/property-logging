@@ -16,5 +16,5 @@ public class StaticPropertyOptions
     /// <summary>
     /// Gets the property values.
     /// </summary>
-    public IDictionary<string, object> Values { get; } = new Dictionary<string, object>();
+    public IDictionary<string, object?> Values { get; } = new Dictionary<string, object?>();
 }

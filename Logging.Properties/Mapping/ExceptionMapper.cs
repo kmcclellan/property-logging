@@ -19,12 +19,12 @@ class ExceptionMapper<TProvider> : ILogPropertyMapper<TProvider>
         this.options = options;
     }
 
-    public IEnumerable<KeyValuePair<string, object>> Map<TState>(
+    public IEnumerable<KeyValuePair<string, object?>> Map<TState>(
         LogEntry<TState> entry,
         IExternalScopeProvider? scopes = null) =>
         Map(entry.Exception, this.options.Value);
 
-    private static IEnumerable<KeyValuePair<string, object>> Map(Exception? exception, ExceptionPropertyOptions options)
+    private static IEnumerable<KeyValuePair<string, object?>> Map(Exception? exception, ExceptionPropertyOptions options)
     {
         if (options.IsRecursive && exception is AggregateException aggregate)
         {

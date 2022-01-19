@@ -43,7 +43,7 @@ class EnvironmentMapper<TProvider> : ILogPropertyMapper<TProvider>
     }
 #endif
 
-    public IEnumerable<KeyValuePair<string, object>> Map<TState>(
+    public IEnumerable<KeyValuePair<string, object?>> Map<TState>(
         LogEntry<TState> entry,
         IExternalScopeProvider? scopes = null)
     {

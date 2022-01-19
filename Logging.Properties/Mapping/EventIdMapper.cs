@@ -19,7 +19,7 @@ class EventIdMapper<TProvider> : ILogPropertyMapper<TProvider>
         this.options = options;
     }
 
-    public IEnumerable<KeyValuePair<string, object>> Map<TState>(
+    public IEnumerable<KeyValuePair<string, object?>> Map<TState>(
         LogEntry<TState> entry,
         IExternalScopeProvider? scopes = null)
     {

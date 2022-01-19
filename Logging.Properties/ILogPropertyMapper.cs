@@ -22,7 +22,7 @@ public interface ILogPropertyMapper
     /// <param name="entry">The log entry.</param>
     /// <param name="scopes">A provider for log scopes to include when mapping.</param>
     /// <returns>The mapped properties.</returns>
-    IEnumerable<KeyValuePair<string, object>> Map<TState>(
+    IEnumerable<KeyValuePair<string, object?>> Map<TState>(
         LogEntry<TState> entry,
         IExternalScopeProvider? scopes = null);
 }
