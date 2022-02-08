@@ -2,6 +2,10 @@
 
 An extension of `Microsoft.Extensions.Logging` to format logs using configurable named properties.
 
+### Features
+
+* Harness the power of configuration and/or options to specify what log information is handled by a custom logger.
+
 ## Installation
 
 Add the NuGet package to your project:
@@ -34,7 +38,7 @@ The mapping of log information to properties can be configured with `Microsoft.E
 services.AddLogging(
     builder =>
     {
-        // Add the default property mappers (see XML documentation).
+        // Add the standard property mappers (see below).
         builder.AddProperties<MyPropertyLogger>();
 
         // Configure "lvl" and "msg" as properties.
@@ -71,6 +75,22 @@ services.AddLogging(
         builder.Services.AddSingleton<ILoggerProvider, MyPropertyLogger>();
     });
 ```
+
+### Standard mappers
+
+| Options Model | Configuration Section | Description |
+| -- | -- | -- |
+| [EntryPropertyOptions](Logging.Properties/Mapping/EntryPropertyOptions.cs) | `Properties:Entry` | Scalar mappings from the top-level log entry. |
+| [EventIdPropertyOptions](Logging.Properties/Mapping/EventIdPropertyOptions.cs) | `Properties:EventId` | Mappings from the logged event ID (`Id` and `Name`). |
+| [ExceptionPropertyOptions](Logging.Properties/Mapping/ExceptionPropertyOptions.cs) | `Properties:Exception` | Mappings from logged exceptions, including inner exceptions. |
+| [EnvironmentPropertyOptions](Logging.Properties/Mapping/EnvironmentPropertyOptions.cs) | `Properties:Environment` | Common mappings from `System.Environment`. |
+| [TimestampPropertyOptions](Logging.Properties/Mapping/TimestampPropertyOptions.cs) | `Properties:Timestamp` | Mapping from `DateTimeOffset.Now`. |
+| [StaticPropertyOptions](Logging.Properties/Mapping/StaticPropertyOptions.cs) | `Properties:Static` | Injection of static custom properties. |
+| [StatePropertyOptions](Logging.Properties/Mapping/StatePropertyOptions.cs) | `Properties:State` | Mappings from entry and scope state by category, including values logged with a message template. |
+
+Register your own implementation of `ILogPropertyMapper<TProvider>` to map other kinds of data!
+
+### Example configuration
 
 An example of ECS (Elasic Common Schema) mappings in `appsettings.json`:
 
