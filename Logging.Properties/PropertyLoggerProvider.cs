@@ -3,13 +3,16 @@ namespace Microsoft.Extensions.Logging.Properties;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using System;
+using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 /// <summary>
 /// A base provider for logging named properties.
 /// </summary>
-public abstract class PropertyLoggerProvider : ILoggerProvider, ISupportExternalScope
+public abstract class PropertyLoggerProvider : ILoggerProvider, ISupportExternalScope, IAsyncDisposable
 {
     readonly IEnumerable<ILogPropertyMapper> mappers;
+    readonly ActionBlock<IEnumerable<KeyValuePair<string, object?>>>? processor;
 
     IExternalScopeProvider? scopes;
 
@@ -17,9 +20,17 @@ public abstract class PropertyLoggerProvider : ILoggerProvider, ISupportExternal
     /// Initializes the provider with the given property mappers.
     /// </summary>
     /// <param name="mappers">The log property mappers.</param>
-    protected PropertyLoggerProvider(IEnumerable<ILogPropertyMapper> mappers)
+    /// <param name="blockOptions">Options for queued processing (or <see langword="null"/> to block).</param>
+    protected PropertyLoggerProvider(
+        IEnumerable<ILogPropertyMapper> mappers,
+        ExecutionDataflowBlockOptions? blockOptions = null)
     {
         this.mappers = mappers;
+
+        if (blockOptions != null)
+        {
+            this.processor = new(this.Log, blockOptions);
+        }
     }
 
     /// <inheritdoc/>
@@ -35,6 +46,15 @@ public abstract class PropertyLoggerProvider : ILoggerProvider, ISupportExternal
         GC.SuppressFinalize(this);
     }
 
+    /// <inheritdoc/>
+    public virtual async ValueTask DisposeAsync()
+    {
+        await this.DisposeAsyncCore().ConfigureAwait(false);
+
+        Dispose(disposing: false);
+        GC.SuppressFinalize(this);
+    }
+
     /// <summary>
     /// Writes properties for a log entry.
     /// </summary>
@@ -47,9 +67,44 @@ public abstract class PropertyLoggerProvider : ILoggerProvider, ISupportExternal
     /// <param name="disposing"><see langword="true"/> to include managed resources.</param>
     protected virtual void Dispose(bool disposing)
     {
+        if (disposing && this.processor != null)
+        {
+            this.processor.Complete();
+            this.processor.Completion.Wait();
+        }
     }
 
-    private void Log<TState>(LogEntry<TState> entry) => this.Log(this.Map(entry));
+    /// <summary>
+    /// Disposes the instance asynchronously.
+    /// </summary>
+    /// <returns>A task representing the asynchronous disposal.</returns>
+    protected virtual async ValueTask DisposeAsyncCore()
+    {
+        if (this.processor != null)
+        {
+            this.processor.Complete();
+            await this.processor.Completion.ConfigureAwait(false);
+        }
+    }
+
+    private void Log<TState>(LogEntry<TState> entry)
+    {
+        var properties = this.Map(entry);
+
+        if (this.processor == null)
+        {
+            this.Log(properties);
+        }
+        else if (!this.processor.Post(properties))
+        {
+            if (this.processor.Completion.Exception != null)
+            {
+                throw this.processor.Completion.Exception;
+            }
+
+            throw new InvalidOperationException("Unable to queue properties for processing.");
+        }
+    }
 
     private IEnumerable<KeyValuePair<string, object?>> Map<TState>(LogEntry<TState> entry)
     {
