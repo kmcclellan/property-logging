@@ -1,14 +1,14 @@
 ﻿namespace Microsoft.Extensions.Logging.Properties;
 
-public static class LogCollectorFactoryExtensions
+public static class LogCollectorExtensions
 {
-    public static ILogger AsLogger(this ILogCollectorFactory factory, IExternalScopeProvider? scopes = null)
+    public static ILogger AsLogger(this ILogCollector factory, IExternalScopeProvider? scopes = null)
     {
         ArgumentNullException.ThrowIfNull(factory, nameof(factory));
         return new CollectorLogger(factory, scopes);
     }
 
-    public static ILogCollector Skip(this ILogCollectorFactory factory)
+    public static ILogEntryCollector Skip(this ILogCollector factory)
     {
         ArgumentNullException.ThrowIfNull(factory, nameof(factory));
         return NullCollector.Instance;
@@ -16,10 +16,10 @@ public static class LogCollectorFactoryExtensions
 
     private class CollectorLogger : ILogger
     {
-        readonly ILogCollectorFactory factory;
+        readonly ILogCollector factory;
         readonly IExternalScopeProvider? scopes;
 
-        public CollectorLogger(ILogCollectorFactory factory, IExternalScopeProvider? scopes)
+        public CollectorLogger(ILogCollector factory, IExternalScopeProvider? scopes)
         {
             this.factory = factory;
             this.scopes = scopes;
@@ -42,22 +42,22 @@ public static class LogCollectorFactoryExtensions
             Exception? exception,
             Func<TState, Exception?, string> formatter)
         {
-            using var collector = factory.Create(level, eventId);
+            using var collector = factory.Begin(level, eventId);
 
             if (exception != null)
             {
                 collector.AddException(exception);
             }
 
-            if (collector is ILogMessageCollector msg)
+            if (!collector.SkipMessage)
             {
-                msg.AddMessage(formatter(state, exception));
+                collector.AddMessage(formatter(state, exception));
             }
 
-            if (collector is ILogPropertyCollector prop)
+            if (!collector.SkipProperties)
             {
-                this.scopes?.ForEachScope((x, y) => Collect(x, y), prop);
-                Collect(state, prop);
+                this.scopes?.ForEachScope((x, y) => Collect(x, y), collector);
+                Collect(state, collector);
             }
         }
 
@@ -73,15 +73,27 @@ public static class LogCollectorFactoryExtensions
         }
     }
 
-    private class NullCollector : ILogCollector
+    private class NullCollector : ILogEntryCollector
     {
-        public static ILogCollector Instance = new NullCollector();
+        public static ILogEntryCollector Instance = new NullCollector();
 
         private NullCollector()
         {
         }
 
+        public bool SkipMessage => true;
+
+        public bool SkipProperties => true;
+
+        public void AddMessage(string message)
+        {
+        }
+
         public void AddException(Exception exception)
+        {
+        }
+
+        public void AddProperty(string name, object? value)
         {
         }
 

@@ -1,6 +1,6 @@
 ﻿namespace Microsoft.Extensions.Logging.Properties;
 
-public interface ILogPropertyCollector : ILogCollector
+public interface ILogPropertyCollector : IDisposable
 {
     void AddProperty(string name, object? value);
 }

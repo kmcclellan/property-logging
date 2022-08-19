@@ -1,6 +1,8 @@
 ﻿namespace Microsoft.Extensions.Logging.Properties;
 
-public interface ILogCollector : IDisposable
+public interface ILogCollector
 {
-    void AddException(Exception exception);
+    bool IsEnabled(LogLevel level);
+
+    ILogEntryCollector Begin(LogLevel level, EventId id);
 }
