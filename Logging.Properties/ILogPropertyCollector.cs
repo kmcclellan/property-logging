@@ -1,10 +1,6 @@
 ﻿namespace Microsoft.Extensions.Logging.Properties;
 
-using Microsoft.Extensions.Logging;
-
-public interface ILogPropertyCollector
+public interface ILogPropertyCollector : ILogCollector
 {
-    bool IsEnabled(LogLevel level);
-
-    ILogPropertyCollection Begin(LogLevel level, EventId eventId, Exception? exception);
+    void AddProperty(string name, object? value);
 }
