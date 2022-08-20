@@ -1,12 +1,14 @@
 ﻿namespace Microsoft.Extensions.Logging.Properties;
 
-public interface ILogEntryCollector : ILogPropertyCollector
+public interface ILogEntryCollector : IDisposable
 {
-    public bool SkipMessage { get; }
+    bool SkipMessage { get; }
 
-    public bool SkipProperties { get; }
+    bool SkipProperties { get; }
 
-    public void AddMessage(string message);
+    void AddMessage(string message);
 
-    public void AddException(Exception exception);
+    void AddException(Exception exception);
+
+    void AddProperty(string name, object? value);
 }

@@ -61,7 +61,7 @@ public static class LogCollectorExtensions
             }
         }
 
-        static void Collect(object? state, ILogPropertyCollector collector)
+        static void Collect(object? state, ILogEntryCollector collector)
         {
             if (state is IEnumerable<KeyValuePair<string, object?>> properties)
             {
