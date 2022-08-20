@@ -14,7 +14,7 @@ public static class LogCollectorExtensions
         return NullCollector.Instance;
     }
 
-    private class CollectorLogger : ILogger
+    class CollectorLogger : ILogger
     {
         readonly ILogCollector factory;
         readonly IExternalScopeProvider? scopes;
@@ -73,7 +73,7 @@ public static class LogCollectorExtensions
         }
     }
 
-    private class NullCollector : ILogEntryCollector
+    class NullCollector : ILogEntryCollector
     {
         public static ILogEntryCollector Instance = new NullCollector();
 
