@@ -1,33 +1,39 @@
-﻿namespace Microsoft.Extensions.Logging.Properties;
+namespace Microsoft.Extensions.Logging.Properties;
+
+using Microsoft.Extensions.Logging.Abstractions;
 
 public static class LogCollectorExtensions
 {
-    public static ILogger AsLogger(this ILogCollector factory, IExternalScopeProvider? scopes = null)
+    public static ILogger AsLogger(this ILogCollector factory)
     {
         ArgumentNullException.ThrowIfNull(factory, nameof(factory));
-        return new CollectorLogger(factory, scopes);
+        return new CollectorLogger(factory);
     }
 
     public static ILogEntryCollector Skip(this ILogCollector factory)
     {
         ArgumentNullException.ThrowIfNull(factory, nameof(factory));
-        return NullCollector.Instance;
+        return NullEntry.Instance;
     }
 
-    class CollectorLogger : ILogger
+    class CollectorLogger : ILogger, ISupportExternalScope
     {
         readonly ILogCollector factory;
-        readonly IExternalScopeProvider? scopes;
+        IExternalScopeProvider? scopes;
 
-        public CollectorLogger(ILogCollector factory, IExternalScopeProvider? scopes)
+        public CollectorLogger(ILogCollector factory)
         {
             this.factory = factory;
+        }
+
+        public void SetScopeProvider(IExternalScopeProvider scopes)
+        {
             this.scopes = scopes;
         }
 
         public IDisposable BeginScope<TState>(TState state)
         {
-            throw new NotSupportedException();
+            return NullLogger.Instance.BeginScope(state);
         }
 
         public bool IsEnabled(LogLevel level)
@@ -73,11 +79,11 @@ public static class LogCollectorExtensions
         }
     }
 
-    class NullCollector : ILogEntryCollector
+    class NullEntry : ILogEntryCollector
     {
-        public static ILogEntryCollector Instance = new NullCollector();
+        public static NullEntry Instance = new();
 
-        private NullCollector()
+        private NullEntry()
         {
         }
 
