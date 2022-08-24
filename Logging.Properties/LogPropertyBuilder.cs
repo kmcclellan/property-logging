@@ -13,35 +13,35 @@ public class LogPropertyBuilder<TProvider>
     public IServiceCollection Services { get; }
 
     public LogPropertyBuilder<TProvider, TWriter> Serialize<T, TWriter>()
-        where T : class, ILogSerializer<TWriter>
+        where T : class, IPropertySerializer<TWriter>
     {
         this.Services.TryAddSingleton<T>();
         this.Services.TryAddSingleton(
             provider =>
             {
-                var factory = provider.GetRequiredService<T>();
+                var serializer = provider.GetRequiredService<T>();
 
-                return factory is ILogSerializer<TWriter, TProvider> wrapped
+                return serializer is IPropertySerializer<TWriter, TProvider> wrapped
                     ? wrapped
-                    : new SerializerWrapper<T, TWriter>(factory);
+                    : new SerializerWrapper<T, TWriter>(serializer);
             });
 
         return new(this.Services);
     }
 
-    class SerializerWrapper<T, TWriter> : ILogSerializer<TWriter, TProvider>
-        where T : class, ILogSerializer<TWriter>
+    class SerializerWrapper<T, TWriter> : IPropertySerializer<TWriter, TProvider>
+        where T : class, IPropertySerializer<TWriter>
     {
-        readonly T factory;
+        readonly T serializer;
 
-        public SerializerWrapper(T factory)
+        public SerializerWrapper(T serializer)
         {
-            this.factory = factory;
+            this.serializer = serializer;
         }
 
         public IDisposable Begin(out TWriter writer)
         {
-            return this.factory.Begin(out writer);
+            return this.serializer.Begin(out writer);
         }
     }
 }
@@ -85,7 +85,7 @@ public class LogPropertyBuilder<TProvider, TWriter>
 
     LogPropertyBuilder<TProvider, TWriter> AddAction(LogWriteAction<TWriter> action)
     {
-        this.Services.Configure<LogCollectorOptions<TWriter, TProvider>>(x => x.Actions.Add(action));
+        this.Services.Configure<PropertyCollectorOptions<TWriter, TProvider>>(x => x.Actions.Add(action));
         return this;
     }
 }

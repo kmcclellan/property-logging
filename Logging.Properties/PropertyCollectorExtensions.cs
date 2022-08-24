@@ -2,15 +2,15 @@ namespace Microsoft.Extensions.Logging.Properties;
 
 using Microsoft.Extensions.Logging.Abstractions;
 
-public static class LogCollectorExtensions
+public static class PropertyCollectorExtensions
 {
-    public static ILogger AsLogger(this ILogCollector factory)
+    public static ILogger AsLogger(this IPropertyCollector factory)
     {
         ArgumentNullException.ThrowIfNull(factory, nameof(factory));
         return new CollectorLogger(factory);
     }
 
-    public static ILogEntryCollector Skip(this ILogCollector factory)
+    public static IPropertyEntry Skip(this IPropertyCollector factory)
     {
         ArgumentNullException.ThrowIfNull(factory, nameof(factory));
         return NullEntry.Instance;
@@ -18,10 +18,10 @@ public static class LogCollectorExtensions
 
     class CollectorLogger : ILogger, ISupportExternalScope
     {
-        readonly ILogCollector factory;
+        readonly IPropertyCollector factory;
         IExternalScopeProvider? scopes;
 
-        public CollectorLogger(ILogCollector factory)
+        public CollectorLogger(IPropertyCollector factory)
         {
             this.factory = factory;
         }
@@ -67,7 +67,7 @@ public static class LogCollectorExtensions
             }
         }
 
-        static void Collect(object? state, ILogEntryCollector collector)
+        static void Collect(object? state, IPropertyEntry collector)
         {
             if (state is IEnumerable<KeyValuePair<string, object?>> properties)
             {
@@ -79,7 +79,7 @@ public static class LogCollectorExtensions
         }
     }
 
-    class NullEntry : ILogEntryCollector
+    class NullEntry : IPropertyEntry
     {
         public static NullEntry Instance = new();
 

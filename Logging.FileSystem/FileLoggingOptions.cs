@@ -1,4 +1,4 @@
-namespace Microsoft.Extensions.Logging.Properties.Files;
+namespace Microsoft.Extensions.Logging.FileSystem;
 
 using System.Text;
 

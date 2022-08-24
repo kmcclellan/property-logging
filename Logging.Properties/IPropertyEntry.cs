@@ -1,6 +1,6 @@
 ﻿namespace Microsoft.Extensions.Logging.Properties;
 
-public interface ILogEntryCollector : IDisposable
+public interface IPropertyEntry : IDisposable
 {
     bool SkipMessage { get; }
 

@@ -3,11 +3,11 @@ namespace Microsoft.Extensions.Logging.Properties;
 using System.Buffers;
 using System.Text.Json;
 
-class JsonLogSerializer : ILogSerializer<Utf8JsonWriter>
+class JsonPropertySerializer : IPropertySerializer<Utf8JsonWriter>
 {
-    readonly ILogSerializer<IBufferWriter<byte>> serializer;
+    readonly IPropertySerializer<IBufferWriter<byte>> serializer;
 
-    public JsonLogSerializer(ILogSerializer<IBufferWriter<byte>> serializer)
+    public JsonPropertySerializer(IPropertySerializer<IBufferWriter<byte>> serializer)
     {
         this.serializer = serializer;
     }
@@ -24,7 +24,7 @@ class JsonLogSerializer : ILogSerializer<Utf8JsonWriter>
         readonly IDisposable entry;
         readonly IBufferWriter<byte> buffer;
 
-        public JsonLogEntry(ILogSerializer<IBufferWriter<byte>> serializer)
+        public JsonLogEntry(IPropertySerializer<IBufferWriter<byte>> serializer)
         {
             this.entry = serializer.Begin(out this.buffer);
 

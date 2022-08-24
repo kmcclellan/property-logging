@@ -1,4 +1,6 @@
-namespace Microsoft.Extensions.Logging.Properties.Files;
+namespace Microsoft.Extensions.Logging.FileSystem;
+
+using Microsoft.Extensions.Logging.Properties;
 
 using System.Collections.Concurrent;
 
@@ -8,12 +10,12 @@ using System.Collections.Concurrent;
 [ProviderAlias("File")]
 public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope
 {
-    readonly ILogCollectorFactory<FileLoggerProvider> collectors;
+    readonly IPropertyCollectorFactory<FileLoggerProvider> collectors;
     readonly ConcurrentDictionary<string, ILogger> loggers = new();
 
     IExternalScopeProvider? scopes;
 
-    internal FileLoggerProvider(ILogCollectorFactory<FileLoggerProvider> collectors)
+    internal FileLoggerProvider(IPropertyCollectorFactory<FileLoggerProvider> collectors)
     {
         this.collectors = collectors;
     }

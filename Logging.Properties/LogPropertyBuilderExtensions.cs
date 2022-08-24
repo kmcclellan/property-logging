@@ -11,6 +11,6 @@ public static class LogPropertyBuilderExtensions
         ArgumentNullException.ThrowIfNull(builder, nameof(builder));
 
         return new LogPropertyBuilder<TProvider>(builder.Services)
-            .Serialize<JsonLogSerializer, Utf8JsonWriter>();
+            .Serialize<JsonPropertySerializer, Utf8JsonWriter>();
     }
 }

@@ -1,4 +1,4 @@
-namespace Microsoft.Extensions.Logging.Properties.Files;
+namespace Microsoft.Extensions.Logging.FileSystem;
 
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Properties;
@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 using System.Buffers;
 using System.Globalization;
 
-class FileLogSerializer : ILogSerializer<IBufferWriter<byte>, FileLoggerProvider>, IDisposable
+class FilePropertySerializer : IPropertySerializer<IBufferWriter<byte>, FileLoggerProvider>, IDisposable
 {
     readonly IOptionsMonitor<FileLoggingOptions> options;
     readonly ObjectPool<ArrayBufferWriter<byte>> writers;
@@ -17,7 +17,7 @@ class FileLogSerializer : ILogSerializer<IBufferWriter<byte>, FileLoggerProvider
 
     Stream output;
 
-    public FileLogSerializer(IHostEnvironment env, IOptionsMonitor<FileLoggingOptions> options, ObjectPoolProvider pools)
+    public FilePropertySerializer(IHostEnvironment env, IOptionsMonitor<FileLoggingOptions> options, ObjectPoolProvider pools)
     {
         this.options = options;
         this.writers = pools.Create<ArrayBufferWriter<byte>>();
@@ -65,10 +65,10 @@ class FileLogSerializer : ILogSerializer<IBufferWriter<byte>, FileLoggerProvider
 
     struct SerializerEntry : IDisposable
     {
-        readonly FileLogSerializer serializer;
+        readonly FilePropertySerializer serializer;
         readonly ArrayBufferWriter<byte> writer;
 
-        public SerializerEntry(FileLogSerializer serializer, ArrayBufferWriter<byte> writer)
+        public SerializerEntry(FilePropertySerializer serializer, ArrayBufferWriter<byte> writer)
         {
             this.serializer = serializer;
             this.writer = writer;

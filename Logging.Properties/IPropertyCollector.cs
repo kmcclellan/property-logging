@@ -1,8 +1,8 @@
 ﻿namespace Microsoft.Extensions.Logging.Properties;
 
-public interface ILogCollector
+public interface IPropertyCollector
 {
     bool IsEnabled(LogLevel level);
 
-    ILogEntryCollector Begin(LogLevel level, EventId id);
+    IPropertyEntry Begin(LogLevel level, EventId id);
 }

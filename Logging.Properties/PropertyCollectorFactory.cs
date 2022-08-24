@@ -4,23 +4,23 @@ using Microsoft.Extensions.Options;
 
 using System.Collections.Concurrent;
 
-class LogCollectorFactory<TWriter, TProvider> : ILogCollectorFactory<TProvider>, IDisposable
+class PropertyCollectorFactory<TWriter, TProvider> : IPropertyCollectorFactory<TProvider>, IDisposable
 {
-    readonly IOptionsMonitor<LogCollectorOptions<TWriter, TProvider>> options;
-    readonly ILogSerializer<TWriter> serializer;
+    readonly IOptionsMonitor<PropertyCollectorOptions<TWriter, TProvider>> options;
+    readonly IPropertySerializer<TWriter> serializer;
     readonly ConcurrentDictionary<string, LogWriteAction<TWriter>?> actions = new();
     readonly IDisposable reload;
 
-    public LogCollectorFactory(
-        IOptionsMonitor<LogCollectorOptions<TWriter, TProvider>> options,
-        ILogSerializer<TWriter, TProvider> serializer)
+    public PropertyCollectorFactory(
+        IOptionsMonitor<PropertyCollectorOptions<TWriter, TProvider>> options,
+        IPropertySerializer<TWriter, TProvider> serializer)
     {
         this.options = options;
         this.serializer = serializer;
         this.reload = options.OnChange(x => this.actions.Clear());
     }
 
-    public ILogCollector Create(string category)
+    public IPropertyCollector Create(string category)
     {
         return new LogCollector(this, category);
     }
@@ -53,12 +53,12 @@ class LogCollectorFactory<TWriter, TProvider> : ILogCollectorFactory<TProvider>,
         return action;
     }
 
-    class LogCollector : ILogCollector
+    class LogCollector : IPropertyCollector
     {
-        readonly LogCollectorFactory<TWriter, TProvider> factory;
+        readonly PropertyCollectorFactory<TWriter, TProvider> factory;
         readonly string category;
 
-        public LogCollector(LogCollectorFactory<TWriter, TProvider> factory, string category)
+        public LogCollector(PropertyCollectorFactory<TWriter, TProvider> factory, string category)
         {
             this.factory = factory;
             this.category = category;
@@ -69,7 +69,7 @@ class LogCollectorFactory<TWriter, TProvider> : ILogCollectorFactory<TProvider>,
             return this.factory.GetAction(this.category) != null;
         }
 
-        public ILogEntryCollector Begin(LogLevel level, EventId id)
+        public IPropertyEntry Begin(LogLevel level, EventId id)
         {
             var action = this.factory.GetAction(this.category);
             if (action != null)
@@ -83,7 +83,7 @@ class LogCollectorFactory<TWriter, TProvider> : ILogCollectorFactory<TProvider>,
             return this.Skip();
         }
 
-        struct EntryCollector : ILogEntryCollector
+        struct EntryCollector : IPropertyEntry
         {
             readonly LogWriteAction<TWriter> action;
             readonly IDisposable entry;
