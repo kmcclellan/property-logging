@@ -1,25 +1,26 @@
 namespace Microsoft.Extensions.Logging.Properties;
 
-static class LogCategory
+public static class LogCategory
 {
-    public static bool Matches(string category, string pattern)
+    public static bool Matches(ReadOnlySpan<char> category, ReadOnlySpan<char> pattern)
     {
-        ArgumentNullException.ThrowIfNull(category, nameof(category));
-        ArgumentNullException.ThrowIfNull(pattern, nameof(pattern));
-
+        const char wildcard = '*';
         const StringComparison cmp = StringComparison.OrdinalIgnoreCase;
-        var split = pattern.IndexOf('*', cmp);
 
-        if (split > 0 && category.IndexOf('*', split + 1) > 0)
+        var split = pattern.IndexOf(wildcard);
+        if (split < 0)
+        {
+            return category.StartsWith(pattern, cmp);
+        }
+
+        var suffix = pattern.Slice(split + 1);
+        if (suffix.IndexOf(wildcard) > 0)
         {
             throw new ArgumentException(
                 "Only one wildcard character is allowed in category name.",
                 nameof(pattern));
         }
 
-        return split == -1
-            ? category.StartsWith(pattern, cmp)
-            : category.AsSpan().StartsWith(pattern.AsSpan(0, split), cmp) &&
-                category.AsSpan().EndsWith(pattern.AsSpan(split + 1), cmp);
+        return category.StartsWith(pattern.Slice(0, split), cmp) && category.EndsWith(suffix, cmp);
     }
 }
