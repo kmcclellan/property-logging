@@ -14,31 +14,28 @@ class JsonPropertySerializer : IPropertySerializer<Utf8JsonWriter>
 
     public IDisposable Begin(out Utf8JsonWriter writer)
     {
-        var entry = new JsonLogEntry(this.serializer);
-        writer = entry.Writer;
-        return entry;
+        var entry = this.serializer.Begin(out var buffer);
+        writer = new(buffer);
+        writer.WriteStartObject();
+
+        return new JsonEntry(entry, writer);
     }
 
-    struct JsonLogEntry : IDisposable
+    struct JsonEntry : IDisposable
     {
         readonly IDisposable entry;
-        readonly IBufferWriter<byte> buffer;
+        readonly Utf8JsonWriter writer;
 
-        public JsonLogEntry(IPropertySerializer<IBufferWriter<byte>> serializer)
+        public JsonEntry(IDisposable entry, Utf8JsonWriter writer)
         {
-            this.entry = serializer.Begin(out this.buffer);
-
-            this.Writer = new(buffer);
-            this.Writer.WriteStartObject();
+            this.entry = entry;
+            this.writer = writer;
         }
-
-        public Utf8JsonWriter Writer { get; }
 
         public void Dispose()
         {
-            this.Writer.WriteEndObject();
-            this.Writer.Dispose();
-
+            this.writer.WriteEndObject();
+            this.writer.Dispose();
             this.entry.Dispose();
         }
     }
