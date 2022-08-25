@@ -13,7 +13,7 @@ public static class LogCategory
             return category.StartsWith(pattern, cmp);
         }
 
-        var suffix = pattern.Slice(split + 1);
+        var suffix = pattern[(split + 1)..];
         if (suffix.IndexOf(wildcard) > 0)
         {
             throw new ArgumentException(
@@ -21,6 +21,6 @@ public static class LogCategory
                 nameof(pattern));
         }
 
-        return category.StartsWith(pattern.Slice(0, split), cmp) && category.EndsWith(suffix, cmp);
+        return category.StartsWith(pattern[..split], cmp) && category.EndsWith(suffix, cmp);
     }
 }
