@@ -26,6 +26,10 @@ public class LogPropertyBuilder<TProvider>
                     : new SerializerWrapper<T, TWriter>(serializer);
             });
 
+        this.Services.TryAddSingleton<
+            IPropertyCollectorFactory<TProvider>,
+            PropertyCollectorFactory<TWriter, TProvider>>();
+
         return new(this.Services);
     }
 
