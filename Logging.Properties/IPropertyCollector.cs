@@ -1,4 +1,4 @@
-﻿namespace Microsoft.Extensions.Logging.Properties;
+namespace Microsoft.Extensions.Logging.Properties;
 
 public interface IPropertyCollector
 {
