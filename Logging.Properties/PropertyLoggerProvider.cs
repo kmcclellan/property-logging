@@ -1,5 +1,7 @@
 namespace Microsoft.Extensions.Logging.Properties;
 
+using Microsoft.Extensions.Options;
+
 using System.Collections.Concurrent;
 
 /// <summary>
@@ -7,18 +9,23 @@ using System.Collections.Concurrent;
 /// </summary>
 public class PropertyLoggerProvider : ILoggerProvider, ISupportExternalScope
 {
+    readonly IOptionsMonitor<PropertyLoggingOptions> options;
     readonly IPropertyCollectorFactory collectors;
+    readonly IDisposable reload;
     readonly ConcurrentDictionary<string, ILogger> loggers = new();
 
-    IExternalScopeProvider? scopes;
+    IExternalScopeProvider scopes = NullScopes.Instance;
 
     /// <summary>
     /// Initializes the provider.
     /// </summary>
+    /// <param name="options">The property logging options.</param>
     /// <param name="collectors">The collector factory for log properties.</param>
-    public PropertyLoggerProvider(IPropertyCollectorFactory collectors)
+    public PropertyLoggerProvider(IOptionsMonitor<PropertyLoggingOptions> options, IPropertyCollectorFactory collectors)
     {
+        this.options = options;
         this.collectors = collectors;
+        this.reload = options.OnChange(x => this.SetLoggerScopes(x.IncludeScopes ? this.scopes : NullScopes.Instance));
     }
 
     /// <inheritdoc/>
@@ -26,9 +33,9 @@ public class PropertyLoggerProvider : ILoggerProvider, ISupportExternalScope
     {
         this.scopes = scopeProvider;
 
-        foreach (var logger in this.loggers.Values.OfType<ISupportExternalScope>())
+        if (this.options.CurrentValue.IncludeScopes)
         {
-            logger.SetScopeProvider(scopeProvider);
+            this.SetLoggerScopes(this.scopes);
         }
     }
 
@@ -66,5 +73,35 @@ public class PropertyLoggerProvider : ILoggerProvider, ISupportExternalScope
     /// </param>
     protected virtual void Dispose(bool disposing)
     {
+        if (disposing)
+        {
+            this.reload.Dispose();
+        }
+    }
+
+    void SetLoggerScopes(IExternalScopeProvider scopes)
+    {
+        foreach (var logger in this.loggers.Values.OfType<ISupportExternalScope>())
+        {
+            logger.SetScopeProvider(scopes);
+        }
+    }
+
+    class NullScopes : IExternalScopeProvider
+    {
+        public static NullScopes Instance = new();
+
+        private NullScopes()
+        {
+        }
+
+        public IDisposable Push(object? state)
+        {
+            throw new NotSupportedException();
+        }
+
+        public void ForEachScope<TState>(Action<object?, TState> callback, TState state)
+        {
+        }
     }
 }

@@ -2,6 +2,7 @@ namespace Microsoft.Extensions.Logging.Properties;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 public class LogPropertyBuilder<TProvider>
 {
@@ -11,6 +12,8 @@ public class LogPropertyBuilder<TProvider>
     }
 
     public IServiceCollection Services { get; }
+
+    public OptionsBuilder<PropertyLoggingOptions<TProvider>> Options { get; }
 
     public LogPropertyBuilder<TProvider, TWriter> Serialize<T, TWriter>()
         where T : class, IPropertySerializer<TWriter>
@@ -55,9 +58,12 @@ public class LogPropertyBuilder<TProvider, TWriter>
     public LogPropertyBuilder(IServiceCollection services)
     {
         this.Services = services;
+        this.Collector = services.AddOptions<PropertyCollectorOptions<TWriter, TProvider>>();
     }
 
     public IServiceCollection Services { get; }
+
+    public OptionsBuilder<PropertyCollectorOptions<TWriter, TProvider>> Collector { get; }
 
     public LogPropertyBuilder<TProvider, TWriter> OnEntry(
         Action<TWriter, string, LogLevel, EventId> action,
@@ -89,7 +95,7 @@ public class LogPropertyBuilder<TProvider, TWriter>
 
     LogPropertyBuilder<TProvider, TWriter> AddAction(LogWriteAction<TWriter> action)
     {
-        this.Services.Configure<PropertyCollectorOptions<TWriter, TProvider>>(x => x.Actions.Add(action));
+        this.Collector.Configure(x => x.Actions.Add(action));
         return this;
     }
 }
