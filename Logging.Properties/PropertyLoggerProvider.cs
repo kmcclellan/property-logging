@@ -16,7 +16,7 @@ public class PropertyLoggerProvider : ILoggerProvider, ISupportExternalScope
     /// Initializes the provider.
     /// </summary>
     /// <param name="collectors">The collector factory for log properties.</param>
-    protected PropertyLoggerProvider(IPropertyCollectorFactory collectors)
+    public PropertyLoggerProvider(IPropertyCollectorFactory collectors)
     {
         this.collectors = collectors;
     }
