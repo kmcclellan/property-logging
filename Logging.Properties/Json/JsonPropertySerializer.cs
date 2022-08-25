@@ -3,8 +3,10 @@ namespace Microsoft.Extensions.Logging.Properties.Json;
 using Microsoft.Extensions.Options;
 
 using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
+[SuppressMessage("Microsoft.Performance", "CA1812", Justification = "Dependency injection.")]
 class JsonPropertySerializer<TProvider> : IPropertySerializer<Utf8JsonWriter, TProvider>
 {
     readonly IOptions<JsonPropertyOptions> options;

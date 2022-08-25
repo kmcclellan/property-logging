@@ -6,8 +6,10 @@ using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
 
 using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
+[SuppressMessage("Microsoft.Performance", "CA1812", Justification = "Dependency injection.")]
 class FilePropertySerializer : IPropertySerializer<IBufferWriter<byte>, FileLoggerProvider>, IDisposable
 {
     readonly IOptionsMonitor<FileLoggingOptions> options;

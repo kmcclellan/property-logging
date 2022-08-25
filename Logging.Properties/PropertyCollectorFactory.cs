@@ -3,7 +3,9 @@ namespace Microsoft.Extensions.Logging.Properties;
 using Microsoft.Extensions.Options;
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 
+[SuppressMessage("Microsoft.Performance", "CA1812", Justification = "Dependency injection.")]
 class PropertyCollectorFactory<TWriter, TProvider> : IPropertyCollectorFactory<TProvider>, IDisposable
 {
     readonly IOptionsMonitor<PropertyCollectorOptions<TWriter, TProvider>> options;
