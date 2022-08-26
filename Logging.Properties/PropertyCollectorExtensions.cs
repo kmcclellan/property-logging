@@ -4,10 +4,11 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 public static class PropertyCollectorExtensions
 {
-    public static ILogger AsLogger(this IPropertyCollector factory)
+    public static ILogger AsLogger<T>(this IPropertyCollector<T> factory)
+        where T : IPropertyEntry
     {
         ArgumentNullException.ThrowIfNull(factory, nameof(factory));
-        return new CollectorLogger(factory);
+        return new CollectorLogger<T>(factory);
     }
 
     public static IPropertyEntry Skip(this IPropertyCollector factory)
@@ -16,12 +17,13 @@ public static class PropertyCollectorExtensions
         return NullEntry.Instance;
     }
 
-    class CollectorLogger : ILogger, ISupportExternalScope
+    class CollectorLogger<T> : ILogger, ISupportExternalScope
+        where T : IPropertyEntry
     {
-        readonly IPropertyCollector factory;
+        readonly IPropertyCollector<T> factory;
         IExternalScopeProvider? scopes;
 
-        public CollectorLogger(IPropertyCollector factory)
+        public CollectorLogger(IPropertyCollector<T> factory)
         {
             this.factory = factory;
         }
