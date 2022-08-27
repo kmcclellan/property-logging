@@ -1,11 +1,12 @@
 namespace Microsoft.Extensions.Logging.Properties;
 
-class CollectorLogger : ILogger
+class CollectorLogger<TEntry> : ILogger
+    where TEntry : ILogCollectorEntry
 {
-    readonly ILogCollector collector;
+    readonly ILogCollector<TEntry> collector;
     readonly IExternalScopeProvider? scopes;
 
-    public CollectorLogger(ILogCollector collector, IExternalScopeProvider? scopes)
+    public CollectorLogger(ILogCollector<TEntry> collector, IExternalScopeProvider? scopes)
     {
         this.collector = collector;
         this.scopes = scopes;
