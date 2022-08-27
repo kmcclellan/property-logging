@@ -4,29 +4,23 @@ class CollectorLogger<T> : ILogger
 {
     readonly ILogCollector<T> collector;
     readonly IExternalScopeProvider? scopes;
-    readonly ILogMessageCollector<T>? messageCollector;
-    readonly Action<object?, T>? collectProperties;
+    readonly Action<object?, T> collectProperties;
 
     public CollectorLogger(ILogCollector<T> collector, IExternalScopeProvider? scopes)
     {
         this.collector = collector;
         this.scopes = scopes;
 
-        this.messageCollector = collector as ILogMessageCollector<T>;
-
-        if (collector is ILogPropertyCollector<T> propertyCollector)
+        this.collectProperties = (object? state, T entry) =>
         {
-            this.collectProperties = (object? state, T entry) =>
+            if (state is IEnumerable<KeyValuePair<string, object?>> properties)
             {
-                if (state is IEnumerable<KeyValuePair<string, object?>> properties)
+                foreach (var (key, value) in properties)
                 {
-                    foreach (var (key, value) in properties)
-                    {
-                        propertyCollector.AddProperty(entry, key, value);
-                    }
+                    collector.AddProperty(entry, key, value);
                 }
-            };
-        }
+            }
+        };
     }
 
     public IDisposable BeginScope<TState>(TState state)
@@ -46,22 +40,24 @@ class CollectorLogger<T> : ILogger
         Exception? exception,
         Func<TState, Exception?, string> formatter)
     {
-        if (collector.Begin(level, eventId) is { } entry)
+        var entry = this.collector.Begin(level, eventId, out var skipMessage, out var skipProperties);
+
+        if (exception != null)
         {
-            if (exception != null)
-            {
-                collector.AddException(entry, exception);
-            }
-
-            this.messageCollector?.AddMessage(entry, formatter(state, exception));
-
-            if (this.collectProperties != null)
-            {
-                this.scopes?.ForEachScope(this.collectProperties, entry);
-                this.collectProperties(state, entry);
-            }
-
-            this.collector.Finish(entry);
+            collector.AddException(entry, exception);
         }
+
+        if (!skipMessage)
+        {
+            this.collector.AddMessage(entry, formatter(state, exception));
+        }
+
+        if (!skipProperties)
+        {
+            this.scopes?.ForEachScope(this.collectProperties, entry);
+            this.collectProperties(state, entry);
+        }
+
+        this.collector.Finish(entry);
     }
 }

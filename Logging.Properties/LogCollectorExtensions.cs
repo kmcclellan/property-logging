@@ -8,10 +8,6 @@ public static class LogCollectorExtensions
     /// <summary>
     /// Creates a logger from a log collector.
     /// </summary>
-    /// <remarks>
-    /// Collector may optionally implement <see cref="ILogMessageCollector{TState}"/>
-    /// and/or <see cref="ILogPropertyCollector{TState}"/>.
-    /// </remarks>
     /// <typeparam name="TState">The state type of the collector.</typeparam>
     /// <param name="collector">The target log collector.</param>
     /// <param name="scopes">An optional logging scope provider.</param>

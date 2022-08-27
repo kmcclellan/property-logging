@@ -21,8 +21,17 @@ public interface ILogCollector<TState>
     /// </summary>
     /// <param name="level">The log level.</param>
     /// <param name="id">The log event ID.</param>
+    /// <param name="skipMessage">Whether to skip the message for this entry.</param>
+    /// <param name="skipProperties">Whether to skip properties for this entry.</param>
     /// <returns>State associated with the entry, used to collect additional data.</returns>
-    TState? Begin(LogLevel level, EventId id);
+    TState Begin(LogLevel level, EventId id, out bool skipMessage, out bool skipProperties);
+
+    /// <summary>
+    /// Collects from a log message.
+    /// </summary>
+    /// <param name="state">The state associated with the entry.</param>
+    /// <param name="message">The log message.</param>
+    void AddMessage(TState state, string message);
 
     /// <summary>
     /// Collects from a logged exception.
@@ -30,6 +39,14 @@ public interface ILogCollector<TState>
     /// <param name="state">The state associated with the entry.</param>
     /// <param name="exception">The logged exception.</param>
     void AddException(TState state, Exception exception);
+
+    /// <summary>
+    /// Collects from a log property.
+    /// </summary>
+    /// <param name="state">The state associated with the entry.</param>
+    /// <param name="name">The property name.</param>
+    /// <param name="value">The property value.</param>
+    void AddProperty(TState state, string name, object? value);
 
     /// <summary>
     /// Finishes collecting from a log entry.
