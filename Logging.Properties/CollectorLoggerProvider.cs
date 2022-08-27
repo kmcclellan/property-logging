@@ -1,9 +1,11 @@
 namespace Microsoft.Extensions.Logging.Properties;
 
 /// <summary>
-/// A base implementation of a logger provider using <see cref="ILogCollector"/>.
+/// A base implementation of a logger provider using <see cref="ILogCollector{TEntry}"/>.
 /// </summary>
-public abstract class CollectorLoggerProvider : ILoggerProvider, ISupportExternalScope
+/// <typeparam name="TEntry">The log collector entry type.</typeparam>
+public abstract class CollectorLoggerProvider<TEntry> : ILoggerProvider, ISupportExternalScope
+    where TEntry : ILogCollectorEntry
 {
     readonly ScopeSwitch scopes = new();
 
@@ -40,7 +42,7 @@ public abstract class CollectorLoggerProvider : ILoggerProvider, ISupportExterna
     /// </summary>
     /// <param name="category">The log category name.</param>
     /// <returns>The log collector.</returns>
-    protected abstract ILogCollector GetCollector(string category);
+    protected abstract ILogCollector<TEntry> GetCollector(string category);
 
     /// <summary>
     /// Disposes/releases resources used by the service.
