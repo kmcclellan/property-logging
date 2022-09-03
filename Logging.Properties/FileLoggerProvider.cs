@@ -35,10 +35,11 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope,
     readonly IEnumerable<IConfigureLogException<Utf8JsonWriter>> configureException;
     readonly IEnumerable<IConfigureLogProperty<Utf8JsonWriter>> configureProperty;
 
-    readonly ScopeSwitch scopes = new();
     readonly BufferBlock<JsonEntry> queue = new();
     readonly ObjectPool<JsonEntry> entries;
     readonly Task completion;
+
+    IExternalScopeProvider? scopes;
 
     internal FileLoggerProvider(
         IHostEnvironment env,
@@ -56,7 +57,6 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope,
         this.configureException = configureException;
         this.configureProperty = configureProperty;
 
-        this.scopes.Set(options.Value.IncludeScopes);
         this.entries = pools.Create(JsonEntry.Pooling);
 
         var flushTask = Task.Factory.StartNew(
@@ -83,7 +83,10 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope,
     /// <inheritdoc/>
     public void SetScopeProvider(IExternalScopeProvider scopeProvider)
     {
-        this.scopes.Provider = scopeProvider;
+        if (this.options.Value.IncludeScopes)
+        {
+            this.scopes = scopeProvider;
+        }
     }
 
     /// <inheritdoc/>
@@ -126,7 +129,8 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope,
             }
         }
 
-        return new FileCollector(this, collectEntry, collectMessage, collectException, collectProperty).AsLogger();
+        return new FileCollector(this, collectEntry, collectMessage, collectException, collectProperty)
+            .AsLogger(this.scopes);
     }
 
     /// <inheritdoc/>
