@@ -4,7 +4,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
 
-using System;
 using System.Buffers;
 using System.Globalization;
 using System.Text;
@@ -150,23 +149,24 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope,
     async Task Flush()
     {
         var buffer = new ArrayBufferWriter<byte>();
-        var timestamp = default(DateTime?);
 
-        while (true)
+        while (await this.queue.OutputAvailableAsync().ConfigureAwait(false))
         {
-            if (this.queue.TryReceive(out var entry))
-            {
-                buffer.Write(entry.Data);
-                this.entries.Return(entry);
+            var timestamp = DateTime.UtcNow;
 
-                buffer.Write(Delimiter);
-                timestamp ??= DateTime.UtcNow;
-            }
-            else if (timestamp != null)
+            do
             {
-                var delay = DateTime.UtcNow - timestamp.Value + this.options.Value.Interval;
+                TimeSpan delay;
 
-                if (buffer.WrittenCount < this.options.Value.BufferSize && delay > TimeSpan.Zero)
+                if (this.queue.TryReceive(out var entry))
+                {
+                    buffer.Write(entry.Data);
+                    this.entries.Return(entry);
+
+                    buffer.Write(Delimiter);
+                }
+                else if (buffer.WrittenCount < this.options.Value.BufferSize &&
+                    (delay = DateTime.UtcNow - timestamp + this.options.Value.Interval) > TimeSpan.Zero)
                 {
                     try
                     {
@@ -206,19 +206,15 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope,
                     }
 
                     buffer.Clear();
-                    timestamp = null;
                 }
             }
-            else if (!await this.queue.OutputAvailableAsync().ConfigureAwait(false))
-            {
-                break;
-            }
+            while (buffer.WrittenCount > 0);
         }
     }
 
     class JsonEntry
     {
-        public static IPooledObjectPolicy<JsonEntry> Pooling = new PoolingPolicy();
+        public static readonly IPooledObjectPolicy<JsonEntry> Pooling = new PoolingPolicy();
 
         readonly ArrayBufferWriter<byte> byteWriter = new();
 
@@ -292,7 +288,7 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope,
         }
     }
 
-    struct FileEntry : ILogCollectorEntry
+    readonly struct FileEntry : ILogCollectorEntry
     {
         readonly FileCollector collector;
         readonly JsonEntry entry;
