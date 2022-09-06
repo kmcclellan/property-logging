@@ -150,22 +150,23 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope,
     async Task Flush()
     {
         var buffer = new ArrayBufferWriter<byte>();
-        var timestamp = DateTime.UtcNow;
+        var timestamp = default(DateTime?);
 
-        while (!this.queue.Completion.IsCompleted || buffer.WrittenCount > 0)
+        while (true)
         {
-            var delay = DateTime.UtcNow - timestamp + this.options.Value.Interval;
-
-            if (buffer.WrittenCount < this.options.Value.BufferSize && delay > TimeSpan.Zero)
+            if (this.queue.TryReceive(out var entry))
             {
-                if (this.queue.TryReceive(out var entry))
-                {
-                    buffer.Write(entry.Data);
-                    this.entries.Return(entry);
+                buffer.Write(entry.Data);
+                this.entries.Return(entry);
 
-                    buffer.Write(Delimiter);
-                }
-                else
+                buffer.Write(Delimiter);
+                timestamp ??= DateTime.UtcNow;
+            }
+            else if (timestamp != null)
+            {
+                var delay = DateTime.UtcNow - timestamp.Value + this.options.Value.Interval;
+
+                if (buffer.WrittenCount < this.options.Value.BufferSize && delay > TimeSpan.Zero)
                 {
                     try
                     {
@@ -175,12 +176,7 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope,
                     {
                     }
                 }
-            }
-            else
-            {
-                timestamp = DateTime.UtcNow;
-
-                if (buffer.WrittenCount > 0)
+                else
                 {
                     var path = Path.Combine(
                         this.env.ContentRootPath,
@@ -204,10 +200,18 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope,
                                 buffer.WrittenCount >> 10,
                                 exception))
                             .ConfigureAwait(false);
+
+                        await Task.Delay(100).ConfigureAwait(false);
+                        continue;
                     }
 
                     buffer.Clear();
+                    timestamp = null;
                 }
+            }
+            else if (!await this.queue.OutputAvailableAsync().ConfigureAwait(false))
+            {
+                break;
             }
         }
     }
@@ -288,7 +292,7 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope,
         }
     }
 
-    class FileEntry : ILogCollectorEntry
+    struct FileEntry : ILogCollectorEntry
     {
         readonly FileCollector collector;
         readonly JsonEntry entry;
