@@ -17,12 +17,12 @@ public class FileLoggingOptions
     /// Gets or sets the flush interval for buffered data.
     /// </summary>
     /// <remarks>
-    /// Default is two seconds.
+    /// Default is one second.
     /// </remarks>
-    public TimeSpan Interval { get; set; } = TimeSpan.FromSeconds(2);
+    public TimeSpan FlushInterval { get; set; } = TimeSpan.FromSeconds(1);
 
     /// <summary>
-    /// Gets or sets maximum number of bytes to buffer before flushing.
+    /// Gets or sets the maximum number of bytes to buffer before flushing.
     /// </summary>
     /// <remarks>
     /// Default is 4096.

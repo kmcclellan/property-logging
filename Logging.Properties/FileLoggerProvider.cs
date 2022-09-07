@@ -166,7 +166,7 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope,
                     buffer.Write(Delimiter);
                 }
                 else if (buffer.WrittenCount < this.options.Value.BufferSize &&
-                    (delay = DateTime.UtcNow - timestamp + this.options.Value.Interval) > TimeSpan.Zero)
+                    (delay = DateTime.UtcNow - timestamp + this.options.Value.FlushInterval) > TimeSpan.Zero)
                 {
                     try
                     {
