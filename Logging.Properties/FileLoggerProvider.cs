@@ -6,7 +6,6 @@ using Microsoft.Extensions.Options;
 
 using System.Buffers;
 using System.Globalization;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks.Dataflow;
 
@@ -16,27 +15,14 @@ using System.Threading.Tasks.Dataflow;
 [ProviderAlias("File")]
 public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope, IAsyncDisposable
 {
-    static readonly byte[] Delimiter = Encoding.UTF8.GetBytes(Environment.NewLine);
-
-    static readonly FileStreamOptions WriteOptions = new()
-    {
-        Mode = FileMode.Append,
-        Access = FileAccess.Write,
-        Share = FileShare.Read,
-        Options = FileOptions.Asynchronous,
-        BufferSize = 0,
-    };
-
-    readonly IHostEnvironment env;
     readonly IOptions<FileLoggingOptions> options;
     readonly IEnumerable<IConfigureLogEntry<Utf8JsonWriter>> configureEntry;
     readonly IEnumerable<IConfigureLogMessage<Utf8JsonWriter>> configureMessage;
     readonly IEnumerable<IConfigureLogException<Utf8JsonWriter>> configureException;
     readonly IEnumerable<IConfigureLogProperty<Utf8JsonWriter>> configureProperty;
 
-    readonly BufferBlock<JsonEntry> queue = new();
     readonly ObjectPool<JsonEntry> entries;
-    readonly Task completion;
+    readonly ITargetBlock<JsonEntry> target;
 
     IExternalScopeProvider? scopes;
 
@@ -49,7 +35,6 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope,
         IEnumerable<IConfigureLogException<Utf8JsonWriter>> configureException,
         IEnumerable<IConfigureLogProperty<Utf8JsonWriter>> configureProperty)
     {
-        this.env = env;
         this.options = options;
         this.configureEntry = configureEntry;
         this.configureMessage = configureMessage;
@@ -58,25 +43,23 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope,
 
         this.entries = pools.Create(JsonEntry.Pooling);
 
-        var flushTask = Task.Factory.StartNew(
-            this.Flush,
-            CancellationToken.None,
-            TaskCreationOptions.None,
-            TaskScheduler.Default)
-            .ContinueWith(
-                (task, obj) => ((IDataflowBlock)obj!).Fault(task.Exception!.GetBaseException()),
-                this.queue,
-                CancellationToken.None,
-                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
-                TaskScheduler.Default);
+        var path = Path.Combine(
+                env.ContentRootPath,
+                string.Format(
+                    CultureInfo.InvariantCulture,
+                    options.Value.Path,
+                    env.ApplicationName,
+                    env.EnvironmentName));
 
-        this.completion = Task.Factory.ContinueWhenAll(
-            new[] { this.queue.Completion, flushTask },
-            t => t[0].IsFaulted ? t[0] : t[1],
-            CancellationToken.None,
-            TaskContinuationOptions.ExecuteSynchronously,
-            TaskScheduler.Default)
-            .Unwrap();
+        this.target = new LogFileTarget<JsonEntry>(
+            path,
+            (writer, entry) =>
+            {
+                writer.Write(entry.Data);
+                this.entries.Return(entry);
+            },
+            options.Value.BufferSize,
+            options.Value.FlushInterval);
     }
 
     /// <inheritdoc/>
@@ -135,81 +118,15 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope,
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        this.queue.Complete();
-        await this.completion.ConfigureAwait(false);
+        this.target.Complete();
+        await this.target.Completion.ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
     public void Dispose()
     {
-        this.queue.Complete();
-        this.completion.Wait();
-    }
-
-    async Task Flush()
-    {
-        var buffer = new ArrayBufferWriter<byte>();
-
-        while (await this.queue.OutputAvailableAsync().ConfigureAwait(false))
-        {
-            var timestamp = DateTime.UtcNow;
-
-            do
-            {
-                TimeSpan delay;
-
-                if (this.queue.TryReceive(out var entry))
-                {
-                    buffer.Write(entry.Data);
-                    this.entries.Return(entry);
-
-                    buffer.Write(Delimiter);
-                }
-                else if (buffer.WrittenCount < this.options.Value.BufferSize &&
-                    (delay = DateTime.UtcNow - timestamp + this.options.Value.FlushInterval) > TimeSpan.Zero)
-                {
-                    try
-                    {
-                        await this.queue.OutputAvailableAsync().WaitAsync(delay).ConfigureAwait(false);
-                    }
-                    catch (TimeoutException)
-                    {
-                    }
-                }
-                else
-                {
-                    var path = Path.Combine(
-                        this.env.ContentRootPath,
-                        string.Format(
-                            CultureInfo.InvariantCulture,
-                            this.options.Value.Path,
-                            this.env.ApplicationName,
-                            this.env.EnvironmentName));
-
-                    try
-                    {
-                        using var output = File.Open(path, WriteOptions);
-                        await output.WriteAsync(buffer.WrittenMemory).ConfigureAwait(false);
-                    }
-                    catch (IOException exception)
-                    {
-                        await Console.Error.WriteLineAsync(
-                            string.Format(
-                                CultureInfo.InvariantCulture,
-                                "Error flushing logs ({0} KiB). {1}",
-                                buffer.WrittenCount >> 10,
-                                exception))
-                            .ConfigureAwait(false);
-
-                        await Task.Delay(100).ConfigureAwait(false);
-                        continue;
-                    }
-
-                    buffer.Clear();
-                }
-            }
-            while (buffer.WrittenCount > 0);
-        }
+        this.target.Complete();
+        this.target.Completion.Wait();
     }
 
     class JsonEntry
@@ -320,9 +237,9 @@ public sealed class FileLoggerProvider : ILoggerProvider, ISupportExternalScope,
 
         public void Dispose()
         {
-            if (!this.collector.Provider.queue.Post(this.entry))
+            if (!this.collector.Provider.target.Post(this.entry))
             {
-                throw this.collector.Provider.queue.Completion.Exception?.GetBaseException() ??
+                throw this.collector.Provider.target.Completion.Exception?.GetBaseException() ??
                     throw new ObjectDisposedException(null);
             }
         }
