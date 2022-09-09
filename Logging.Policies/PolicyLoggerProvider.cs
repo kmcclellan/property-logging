@@ -31,7 +31,7 @@ public abstract class PolicyLoggerProvider<TEntry> : ILoggerProvider, ISupportEx
     /// <inheritdoc/>
     public ILogger CreateLogger(string categoryName)
     {
-        return new PolicyLogger<TEntry>(this.GetPolicy(categoryName));
+        return new PolicyLogger(this, this.GetPolicy(categoryName));
     }
 
     /// <inheritdoc/>
@@ -54,5 +54,67 @@ public abstract class PolicyLoggerProvider<TEntry> : ILoggerProvider, ISupportEx
     /// <param name="disposing"><see langword="true"/> to dispose and finalize, <see langword="false"/> to finalize only.</param>
     protected virtual void Dispose(bool disposing)
     {
+    }
+
+    class PolicyLogger : ILogger
+    {
+        readonly PolicyLoggerProvider<TEntry> provider;
+        readonly ILoggingPolicy<TEntry> policy;
+
+        public PolicyLogger(PolicyLoggerProvider<TEntry> provider, ILoggingPolicy<TEntry> policy)
+        {
+            this.provider = provider;
+            this.policy = policy;
+        }
+
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            return this.policy.IsEnabled(logLevel);
+        }
+
+        public IDisposable BeginScope<TState>(TState state)
+        {
+            throw new NotSupportedException($"Use '{nameof(IExternalScopeProvider)}(...)' instead.");
+        }
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            ArgumentNullException.ThrowIfNull(formatter, nameof(formatter));
+
+            using var entry = this.policy.Begin(logLevel, eventId);
+
+            if (!entry.SkipMessage)
+            {
+                entry.AddMessage(formatter(state, exception));
+            }
+
+            if (exception != null)
+            {
+                entry.AddException(exception);
+            }
+
+            if (!entry.SkipProperties)
+            {
+                this.provider.scopes?.ForEachScope((x, y) => Collect(x, y), entry);
+                Collect(state, entry);
+            }
+        }
+
+        static void Collect<T>(T state, ILogEntryPolicy entry)
+        {
+            // Using generic type may avoid boxing.
+            if (state is IEnumerable<KeyValuePair<string, object?>> properties)
+            {
+                foreach (var (key, value) in properties)
+                {
+                    entry.AddProperty(key, value);
+                }
+            }
+        }
     }
 }
