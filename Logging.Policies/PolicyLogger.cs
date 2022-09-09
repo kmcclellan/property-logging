@@ -2,47 +2,32 @@ namespace Microsoft.Extensions.Logging.Policies;
 
 using System;
 
-/// <summary>
-/// A logger using <see cref="ILoggingPolicy{TEntry}"/>.
-/// </summary>
-/// <typeparam name="TEntry">The entry policy type.</typeparam>
-public class PolicyLogger<TEntry> : ILogger
+class PolicyLogger<TEntry> : ILogger
     where TEntry : ILogEntryPolicy
 {
     readonly ILoggingPolicy<TEntry> policy;
     IExternalScopeProvider? scopes;
 
-    /// <summary>
-    /// Initializes the logger.
-    /// </summary>
-    /// <param name="policy">The logging policy.</param>
     public PolicyLogger(ILoggingPolicy<TEntry> policy)
     {
         this.policy = policy;
     }
 
-    /// <summary>
-    /// Sets the provider for log scopes.
-    /// </summary>
-    /// <param name="scopes">The scope provider, or <see langword="null"/> to clear.</param>
     public void SetScopes(IExternalScopeProvider? scopes)
     {
         this.scopes = scopes;
     }
 
-    /// <inheritdoc/>
-    public IDisposable BeginScope<TState>(TState state)
-    {
-        throw new NotSupportedException($"Use '{nameof(SetScopes)}(...)' instead.");
-    }
-
-    /// <inheritdoc/>
     public bool IsEnabled(LogLevel logLevel)
     {
         return this.policy.IsEnabled(logLevel);
     }
 
-    /// <inheritdoc/>
+    public IDisposable BeginScope<TState>(TState state)
+    {
+        throw new NotSupportedException($"Use '{nameof(SetScopes)}(...)' instead.");
+    }
+
     public void Log<TState>(
         LogLevel logLevel,
         EventId eventId,
