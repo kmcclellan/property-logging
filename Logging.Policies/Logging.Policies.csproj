@@ -35,6 +35,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="*" />
+    <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="*" />
     <PackageReference Include="Microsoft.SourceLink.GitLab" Version="*" PrivateAssets="All" />
   </ItemGroup>
 
