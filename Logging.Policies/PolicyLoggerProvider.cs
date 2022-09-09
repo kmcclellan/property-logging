@@ -5,6 +5,7 @@ namespace Microsoft.Extensions.Logging.Policies;
 /// </summary>
 /// <typeparam name="TEntry">The logging policy entry type.</typeparam>
 public abstract class PolicyLoggerProvider<TEntry> : ILoggerProvider, ISupportExternalScope
+    where TEntry : ILogEntryPolicy
 {
     readonly bool includeScopes;
     IExternalScopeProvider? scopes;
@@ -30,7 +31,7 @@ public abstract class PolicyLoggerProvider<TEntry> : ILoggerProvider, ISupportEx
     /// <inheritdoc/>
     public ILogger CreateLogger(string categoryName)
     {
-        throw new NotImplementedException();
+        return new PolicyLogger<TEntry>(this.GetPolicy(categoryName));
     }
 
     /// <inheritdoc/>
@@ -39,6 +40,13 @@ public abstract class PolicyLoggerProvider<TEntry> : ILoggerProvider, ISupportEx
         this.Dispose(disposing: true);
         GC.SuppressFinalize(this);
     }
+
+    /// <summary>
+    /// Retrieves a policy for the given log category.
+    /// </summary>
+    /// <param name="category">The log category name.</param>
+    /// <returns>The logging policy.</returns>
+    protected abstract ILoggingPolicy<TEntry> GetPolicy(string category);
 
     /// <summary>
     /// Disposes and/or finalizes the instance.
