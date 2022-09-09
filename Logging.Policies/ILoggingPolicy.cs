@@ -1,27 +1,16 @@
 namespace Microsoft.Extensions.Logging.Policies;
 
 /// <summary>
-/// A policy for writing logs.
+/// A policy for writing log information.
 /// </summary>
 /// <typeparam name="TEntry">The type of log entry policy.</typeparam>
 public interface ILoggingPolicy<TEntry>
-    where TEntry : ILogEntryPolicy
+    where TEntry : IEntryPolicy
 {
     /// <summary>
-    /// Checks whether logging is enabled for the given level.
+    /// Configures a policy for a specific log category.
     /// </summary>
-    /// <remarks>
-    /// Avoids side-effects of calling <see cref="Begin"/>. Not necessarily invoked before writing.
-    /// </remarks>
-    /// <param name="level">The log level.</param>
-    /// <returns><see langword="true"/> if enabled, otherwise <see langword="false"/>.</returns>
-    bool IsEnabled(LogLevel level);
-
-    /// <summary>
-    /// Begins writing a log entry using this policy.
-    /// </summary>
-    /// <param name="level">The log level.</param>
-    /// <param name="id">The log event ID.</param>
-    /// <returns>A policy for writing the remainder of the entry.</returns>
-    TEntry Begin(LogLevel level, EventId id);
+    /// <param name="category">The log category name.</param>
+    /// <returns>The category policy.</returns>
+    ICategoryPolicy<TEntry> ForCategory(string category);
 }

@@ -1,9 +1,9 @@
 namespace Microsoft.Extensions.Logging.Policies;
 
 /// <summary>
-/// A policy for writing a single log entry.
+/// A policy for writing information for a single log entry.
 /// </summary>
-public interface ILogEntryPolicy : IDisposable
+public interface IEntryPolicy : IDisposable
 {
     /// <summary>
     /// Gets whether to skip the message for this entry.

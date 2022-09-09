@@ -3,20 +3,20 @@ namespace Microsoft.Extensions.Logging.Policies;
 using System;
 
 /// <summary>
-/// A logger using <see cref="ILoggingPolicy{TEntry}"/>.
+/// A logger using <see cref="ICategoryPolicy{TEntry}"/>.
 /// </summary>
 /// <typeparam name="TEntry">The entry policy type.</typeparam>
 public class PolicyLogger<TEntry> : ILogger
-    where TEntry : ILogEntryPolicy
+    where TEntry : IEntryPolicy
 {
-    readonly ILoggingPolicy<TEntry> policy;
+    readonly ICategoryPolicy<TEntry> policy;
     IExternalScopeProvider? scopes;
 
     /// <summary>
     /// Initializes the logger.
     /// </summary>
     /// <param name="policy">The logging policy.</param>
-    public PolicyLogger(ILoggingPolicy<TEntry> policy)
+    public PolicyLogger(ICategoryPolicy<TEntry> policy)
     {
         this.policy = policy;
     }
@@ -71,7 +71,7 @@ public class PolicyLogger<TEntry> : ILogger
         }
     }
 
-    static void Collect<T>(T state, ILogEntryPolicy entry)
+    static void Collect<T>(T state, IEntryPolicy entry)
     {
         // Using generic type may avoid boxing.
         if (state is IEnumerable<KeyValuePair<string, object?>> properties)
