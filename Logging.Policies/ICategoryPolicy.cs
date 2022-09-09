@@ -3,6 +3,13 @@ namespace Microsoft.Extensions.Logging.Policies;
 /// <summary>
 /// A policy for writing log information of a specific category.
 /// </summary>
+public interface ICategoryPolicy : ICategoryPolicy<IEntryPolicy>
+{
+}
+
+/// <summary>
+/// A policy for writing log information of a specific category.
+/// </summary>
 /// <typeparam name="TEntry">The type of log entry policy.</typeparam>
 public interface ICategoryPolicy<TEntry>
     where TEntry : IEntryPolicy
