@@ -10,6 +10,7 @@ public abstract class WriterLoggerProvider<TWriter> : ILoggerProvider, ISupportE
     readonly IEnumerable<IConfigureLogMessage<TWriter>> configureMessage;
     readonly IEnumerable<IConfigureLogException<TWriter>> configureException;
     readonly IEnumerable<IConfigureLogProperty<TWriter>> configureProperty;
+    readonly PolicyProvider loggers;
 
     /// <summary>
     /// Initializes the provider.
@@ -28,18 +29,19 @@ public abstract class WriterLoggerProvider<TWriter> : ILoggerProvider, ISupportE
         this.configureMessage = configureMessage;
         this.configureException = configureException;
         this.configureProperty = configureProperty;
+        this.loggers = new(this);
     }
 
     /// <inheritdoc/>
     public void SetScopeProvider(IExternalScopeProvider scopeProvider)
     {
-        throw new NotImplementedException();
+        this.loggers.SetScopeProvider(scopeProvider);
     }
 
     /// <inheritdoc/>
     public ILogger CreateLogger(string categoryName)
     {
-        throw new NotImplementedException();
+        this.loggers.CreateLogger(categoryName);
     }
 
     /// <inheritdoc/>
@@ -70,6 +72,72 @@ public abstract class WriterLoggerProvider<TWriter> : ILoggerProvider, ISupportE
     /// </param>
     protected virtual void Dispose(bool disposing)
     {
+    }
+
+    class PolicyProvider : PolicyLoggerProvider<WriterEntryPolicy>
+    {
+        readonly WriterLoggerProvider<TWriter> writers;
+
+        public PolicyProvider(WriterLoggerProvider<TWriter> writers)
+        {
+            this.writers = writers;
+        }
+
+        protected override ILoggingPolicy<WriterEntryPolicy> GetPolicy(string category)
+        {
+            throw new NotImplementedException();
+        }
+
+        class WriterPolicy : ILoggingPolicy<WriterEntryPolicy>
+        {
+            public bool IsEnabled(LogLevel level)
+            {
+                throw new NotImplementedException();
+            }
+
+            public WriterEntryPolicy Begin(LogLevel level, EventId id)
+            {
+                throw new NotImplementedException();
+            }
+        }
+    }
+
+    readonly struct WriterEntryPolicy : ILogEntryPolicy
+    {
+        readonly WriterLoggerProvider<TWriter> provider;
+        readonly TWriter writer;
+
+        public WriterEntryPolicy(
+            WriterLoggerProvider<TWriter> provider,
+            TWriter writer)
+        {
+            this.provider = provider;
+            this.writer = writer;
+        }
+
+        public bool SkipMessage => throw new NotImplementedException();
+
+        public bool SkipProperties => throw new NotImplementedException();
+
+        public void AddMessage(string message)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void AddException(Exception exception)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void AddProperty(string name, object? value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Dispose()
+        {
+            this.provider.Finish(this.writer);
+        }
     }
 }
 
