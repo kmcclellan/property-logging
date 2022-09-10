@@ -1,7 +1,7 @@
 namespace Microsoft.Extensions.Logging.Policies;
 
 /// <summary>
-/// Creates loggers using <see cref="ILoggingPolicy{TEntry}"/>.
+/// A base provider for loggers using <see cref="ILoggingPolicy{TEntry}"/>.
 /// </summary>
 /// <typeparam name="TEntry">The logging policy entry type.</typeparam>
 public abstract class PolicyLoggerProvider<TEntry> : ILoggerProvider, ISupportExternalScope
@@ -38,7 +38,9 @@ public abstract class PolicyLoggerProvider<TEntry> : ILoggerProvider, ISupportEx
     /// <summary>
     /// Disposes and/or finalizes the instance.
     /// </summary>
-    /// <param name="disposing"><see langword="true"/> to dispose and finalize, <see langword="false"/> to finalize only.</param>
+    /// <param name="disposing">
+    /// <see langword="true"/> to dispose and finalize, <see langword="false"/> to finalize only.
+    /// </param>
     protected virtual void Dispose(bool disposing)
     {
     }
