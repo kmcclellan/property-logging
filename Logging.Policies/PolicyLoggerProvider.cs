@@ -7,25 +7,12 @@ namespace Microsoft.Extensions.Logging.Policies;
 public abstract class PolicyLoggerProvider<TEntry> : ILoggerProvider, ISupportExternalScope
     where TEntry : ILogEntryPolicy
 {
-    readonly bool includeScopes;
     IExternalScopeProvider? scopes;
-
-    /// <summary>
-    /// Initializes the provider.
-    /// </summary>
-    /// <param name="includeScopes">Whether to include scopes when writing logs.</param>
-    protected PolicyLoggerProvider(bool includeScopes = false)
-    {
-        this.includeScopes = includeScopes;
-    }
 
     /// <inheritdoc/>
     public void SetScopeProvider(IExternalScopeProvider scopeProvider)
     {
-        if (this.includeScopes)
-        {
-            this.scopes = scopeProvider;
-        }
+        this.scopes = scopeProvider;
     }
 
     /// <inheritdoc/>
